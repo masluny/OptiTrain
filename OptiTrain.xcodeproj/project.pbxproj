@@ -1,0 +1,639 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		06F381FE11CF430DE138E2BF /* ActivityAdvisor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8477412AADDC1A09B943B8C /* ActivityAdvisor.swift */; };
+		A1B2C3D4E5F600000000B001 /* AICoach.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F600000000B002 /* AICoach.swift */; };
+		A1B2C3D4E5F600000000C001 /* AICoachCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F600000000C002 /* AICoachCard.swift */; };
+		A1B2C3D4E5F600000000D001 /* Goal.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F600000000D002 /* Goal.swift */; };
+		A1B2C3D4E5F600000000E001 /* GoalCoach.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F600000000E002 /* GoalCoach.swift */; };
+		A1B2C3D4E5F600000000F001 /* GoalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F600000000F002 /* GoalView.swift */; };
+		0D55E3AAA67DC6AB5DA80ED4 /* WorkoutsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5462643296BE8652E596452E /* WorkoutsView.swift */; };
+		1C6022C03266E6CB73A15A7C /* FeatureExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6CA09E284BA27B529F85123 /* FeatureExtractor.swift */; };
+		1C9DFA8FA07325ADF446B7E6 /* ReadinessCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5639DF695E6FEEB2299582F /* ReadinessCalculator.swift */; };
+		245E9EFEFF79E0F2687D2DB9 /* UserSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A14D53C3D517FA8297FCF64 /* UserSettings.swift */; };
+		2B13533D76775CE44FC7FED3 /* EventWeightingMatrix.swift in Sources */ = {isa = PBXBuildFile; fileRef = 818475199726925D2DC68DD3 /* EventWeightingMatrix.swift */; };
+		2DD9151EA73B79D19EC14579 /* OptiTrainApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BFFE56DE20E8E095E327588 /* OptiTrainApp.swift */; };
+		2F14E5445CDA166B1C8CE58C /* TrainingLoadEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA9E186E7117CA4BDD25E916 /* TrainingLoadEngine.swift */; };
+		31F3B89F86D4E9CCF30815BF /* VO2maxTrajectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D966B503270C3B74637403DC /* VO2maxTrajectory.swift */; };
+		3421FFAC9EB24B6960FC20D4 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4761BE94D0AE3E9D55974C6 /* SettingsView.swift */; };
+		34FAD926681B656368ACFB3A /* AdaptiveBaseline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24CDBAFAB7B5BA1ABE89A38C /* AdaptiveBaseline.swift */; };
+		355F55CA7D9717D34FF608FF /* PhysiologyProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4616B32E9D41C03EA593CF00 /* PhysiologyProfile.swift */; };
+		4103E185F165711315C31698 /* Confidence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57E99BA1F3151762C94A8E0C /* Confidence.swift */; };
+		435E3A4FD7D61AE3A303B8DD /* TrainingImpulse.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFF6BCC975F506790583D6B8 /* TrainingImpulse.swift */; };
+		4BF77AC0F5E87370AA509FCC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 16EB536C9E26A8E933DC95CC /* Assets.xcassets */; };
+		4E22FBB5B5C5E7D66DCE07DF /* RobustStatistics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D1EE5EEFA8EBD00D7F18DD0 /* RobustStatistics.swift */; };
+		4F1F3E55ED55D0310DD1ECFD /* SleepIntelligence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1475EB46FB1F9FFFC760BA27 /* SleepIntelligence.swift */; };
+		58A87CAE889A94F50C5BC3E1 /* ReadinessModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AEF71636A9949BB59063C10 /* ReadinessModels.swift */; };
+		5FC672C7089194FE6E3F4DDA /* Explanation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43B3DDF1F648DF9FB0F2CD08 /* Explanation.swift */; };
+		78AF904D57251FFB8332AFC9 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C16F3C374D0A394F4B5508D /* RootView.swift */; };
+		78F86AF7003BE689ABB5EABD /* AdvisorModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54C6BD3DAF78BF9F5224F11E /* AdvisorModels.swift */; };
+		79F12CB114FB33F3311CFBEF /* HealthMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BB6E5934C69B917C57739F /* HealthMetrics.swift */; };
+		810BFFF49476C7743054267F /* ReadinessHeroCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE40F60E13972261BDE9E561 /* ReadinessHeroCard.swift */; };
+		89E397A56B8D595D88074D35 /* ReadinessBreakdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8035F515CD4544561E1BB72 /* ReadinessBreakdownView.swift */; };
+		8AD5F4B375BCF86FBA814AD7 /* EWMA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F3553FBD381A15C1B4F9F5A /* EWMA.swift */; };
+		8E2E6A27B2B6D407E6F940F2 /* AdaptiveIntelligencePipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DD24C50ED6F71CE0592F6C9 /* AdaptiveIntelligencePipeline.swift */; };
+		8FF1105B20954AEC8459F57C /* TrendsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7A3585511FB1A02BF4521A2 /* TrendsView.swift */; };
+		97BA7DDE180D56089038A317 /* RecoveryHalfLife.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48613B88BA5F1448819E4F25 /* RecoveryHalfLife.swift */; };
+		A6F94D9B9F62F85AE289CF30 /* RecoveryDebtModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7293D3CC82CDC3FF8DBB26D7 /* RecoveryDebtModel.swift */; };
+		B2C3CFF7350EE03ED3820959 /* AutonomicStability.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F7602668FFE7F1FB8A1697C /* AutonomicStability.swift */; };
+		B2D7B7CD923A9450759FD13C /* AerobicEfficiency.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECD60CCEDC782EE4B2565FE6 /* AerobicEfficiency.swift */; };
+		BEEF000000000000000000F1 /* BodyEfficiency.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEEF000000000000000000F2 /* BodyEfficiency.swift */; };
+		BEEF000000000000000000F3 /* BodyEfficiencyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEEF000000000000000000F4 /* BodyEfficiencyView.swift */; };
+		B780E95E3C311E6F52941AA5 /* IntelligenceCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375F92AE013456E8D9732B53 /* IntelligenceCards.swift */; };
+		A1B2C3D4E5F600000000A001 /* MetricGlossary.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F600000000A002 /* MetricGlossary.swift */; };
+		BAC3D7F68EEB6B26E6422363 /* RaceTimePrediction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A3E0F4C793B968E0D33A401 /* RaceTimePrediction.swift */; };
+		C0BC880E467B6975F679C8CF /* AdaptiveIntelligenceSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CCCC9B455150BDB64A099D1 /* AdaptiveIntelligenceSnapshot.swift */; };
+		CB34482225BABB2B5ACE88AD /* PhysiologyProfileBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5D61A7E91F4CFBD7FF7F855 /* PhysiologyProfileBuilder.swift */; };
+		DBCC1A6B832446F12999EB38 /* DiagnosticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1842CF61FA65E68EC4F3109 /* DiagnosticsView.swift */; };
+		E5B2FD644E436A2004824B74 /* EventReadinessEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = BACCF0C7FFB17E405F38B92C /* EventReadinessEngine.swift */; };
+		E817A7691A0D382A04420C56 /* EventReadinessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72B8194BF45BB02DDF8C540A /* EventReadinessView.swift */; };
+		E82C9DE3F0152568A252A802 /* ResponseProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46A4CFE0371123B85F003F9E /* ResponseProfile.swift */; };
+		E9559AECA0AC84C66FE53544 /* InjuryAndBurnoutRisk.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44738849D0D43939B4AEAFB1 /* InjuryAndBurnoutRisk.swift */; };
+		ED9EF4225B3415FC8D16026C /* HealthKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3ADCDAEE0B1505C3ED86A72 /* HealthKitManager.swift */; };
+		EF54873D07B8545FF133BA44 /* AdvisorCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0499964C28824CA0185551 /* AdvisorCardView.swift */; };
+		F7F2FEE8980F3E642B9ACA64 /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C31CD8C18B5E68A1AD220DF /* TodayView.swift */; };
+		FDE683672E6B4C8A286A4F70 /* PlateauDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BF40016A600597443DB3318 /* PlateauDetector.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		1000FC2231B9536CD2973F1C /* OptiTrain.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OptiTrain.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1475EB46FB1F9FFFC760BA27 /* SleepIntelligence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepIntelligence.swift; sourceTree = "<group>"; };
+		16EB536C9E26A8E933DC95CC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		1BF40016A600597443DB3318 /* PlateauDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlateauDetector.swift; sourceTree = "<group>"; };
+		24CDBAFAB7B5BA1ABE89A38C /* AdaptiveBaseline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveBaseline.swift; sourceTree = "<group>"; };
+		2F7602668FFE7F1FB8A1697C /* AutonomicStability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutonomicStability.swift; sourceTree = "<group>"; };
+		BEEF000000000000000000F2 /* BodyEfficiency.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyEfficiency.swift; sourceTree = "<group>"; };
+		BEEF000000000000000000F4 /* BodyEfficiencyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyEfficiencyView.swift; sourceTree = "<group>"; };
+		375F92AE013456E8D9732B53 /* IntelligenceCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntelligenceCards.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F600000000A002 /* MetricGlossary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricGlossary.swift; sourceTree = "<group>"; };
+		3A14D53C3D517FA8297FCF64 /* UserSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSettings.swift; sourceTree = "<group>"; };
+		3BFFE56DE20E8E095E327588 /* OptiTrainApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OptiTrainApp.swift; sourceTree = "<group>"; };
+		3DD24C50ED6F71CE0592F6C9 /* AdaptiveIntelligencePipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveIntelligencePipeline.swift; sourceTree = "<group>"; };
+		43B3DDF1F648DF9FB0F2CD08 /* Explanation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Explanation.swift; sourceTree = "<group>"; };
+		44738849D0D43939B4AEAFB1 /* InjuryAndBurnoutRisk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InjuryAndBurnoutRisk.swift; sourceTree = "<group>"; };
+		4616B32E9D41C03EA593CF00 /* PhysiologyProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiologyProfile.swift; sourceTree = "<group>"; };
+		46A4CFE0371123B85F003F9E /* ResponseProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponseProfile.swift; sourceTree = "<group>"; };
+		47BB6E5934C69B917C57739F /* HealthMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthMetrics.swift; sourceTree = "<group>"; };
+		48613B88BA5F1448819E4F25 /* RecoveryHalfLife.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryHalfLife.swift; sourceTree = "<group>"; };
+		4D1EE5EEFA8EBD00D7F18DD0 /* RobustStatistics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RobustStatistics.swift; sourceTree = "<group>"; };
+		5462643296BE8652E596452E /* WorkoutsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutsView.swift; sourceTree = "<group>"; };
+		54C6BD3DAF78BF9F5224F11E /* AdvisorModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvisorModels.swift; sourceTree = "<group>"; };
+		57E99BA1F3151762C94A8E0C /* Confidence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Confidence.swift; sourceTree = "<group>"; };
+		5AEF71636A9949BB59063C10 /* ReadinessModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessModels.swift; sourceTree = "<group>"; };
+		5C31CD8C18B5E68A1AD220DF /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayView.swift; sourceTree = "<group>"; };
+		68104DF92058F84842BC671D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		6A3E0F4C793B968E0D33A401 /* RaceTimePrediction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RaceTimePrediction.swift; sourceTree = "<group>"; };
+		6C16F3C374D0A394F4B5508D /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		7293D3CC82CDC3FF8DBB26D7 /* RecoveryDebtModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryDebtModel.swift; sourceTree = "<group>"; };
+		72B8194BF45BB02DDF8C540A /* EventReadinessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventReadinessView.swift; sourceTree = "<group>"; };
+		7D0499964C28824CA0185551 /* AdvisorCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvisorCardView.swift; sourceTree = "<group>"; };
+		818475199726925D2DC68DD3 /* EventWeightingMatrix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventWeightingMatrix.swift; sourceTree = "<group>"; };
+		8F3553FBD381A15C1B4F9F5A /* EWMA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EWMA.swift; sourceTree = "<group>"; };
+		9CCCC9B455150BDB64A099D1 /* AdaptiveIntelligenceSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveIntelligenceSnapshot.swift; sourceTree = "<group>"; };
+		A5639DF695E6FEEB2299582F /* ReadinessCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessCalculator.swift; sourceTree = "<group>"; };
+		A6CA09E284BA27B529F85123 /* FeatureExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureExtractor.swift; sourceTree = "<group>"; };
+		AE40F60E13972261BDE9E561 /* ReadinessHeroCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessHeroCard.swift; sourceTree = "<group>"; };
+		B1842CF61FA65E68EC4F3109 /* DiagnosticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticsView.swift; sourceTree = "<group>"; };
+		B3ADCDAEE0B1505C3ED86A72 /* HealthKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitManager.swift; sourceTree = "<group>"; };
+		B4761BE94D0AE3E9D55974C6 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		B8035F515CD4544561E1BB72 /* ReadinessBreakdownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessBreakdownView.swift; sourceTree = "<group>"; };
+		B8477412AADDC1A09B943B8C /* ActivityAdvisor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityAdvisor.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F600000000B002 /* AICoach.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AICoach.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F600000000C002 /* AICoachCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AICoachCard.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F600000000D002 /* Goal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Goal.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F600000000E002 /* GoalCoach.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalCoach.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F600000000F002 /* GoalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalView.swift; sourceTree = "<group>"; };
+		BA9E186E7117CA4BDD25E916 /* TrainingLoadEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingLoadEngine.swift; sourceTree = "<group>"; };
+		BACCF0C7FFB17E405F38B92C /* EventReadinessEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventReadinessEngine.swift; sourceTree = "<group>"; };
+		C6492D46F98416379796333B /* OptiTrain.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OptiTrain.entitlements; sourceTree = "<group>"; };
+		CFF6BCC975F506790583D6B8 /* TrainingImpulse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingImpulse.swift; sourceTree = "<group>"; };
+		D7A3585511FB1A02BF4521A2 /* TrendsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendsView.swift; sourceTree = "<group>"; };
+		D966B503270C3B74637403DC /* VO2maxTrajectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VO2maxTrajectory.swift; sourceTree = "<group>"; };
+		E5D61A7E91F4CFBD7FF7F855 /* PhysiologyProfileBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiologyProfileBuilder.swift; sourceTree = "<group>"; };
+		ECD60CCEDC782EE4B2565FE6 /* AerobicEfficiency.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AerobicEfficiency.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		032C872A9091A7C977F3D492 /* Recovery */ = {
+			isa = PBXGroup;
+			children = (
+				2F7602668FFE7F1FB8A1697C /* AutonomicStability.swift */,
+				7293D3CC82CDC3FF8DBB26D7 /* RecoveryDebtModel.swift */,
+				48613B88BA5F1448819E4F25 /* RecoveryHalfLife.swift */,
+			);
+			path = Recovery;
+			sourceTree = "<group>";
+		};
+		034E992EC66BA3E766C7AAC3 /* OptiTrain */ = {
+			isa = PBXGroup;
+			children = (
+				9C9017831C37959CF91BE26D /* Advisor */,
+				527CE34CD3BDA3822D17E1D7 /* App */,
+				C84F25EF968A1FDFC7B9BC28 /* EventReadiness */,
+				FEB3767073AFA7FE7CD7B6E8 /* Explanation */,
+				4B121DDCCE7A960F8F877E91 /* Health */,
+				20B4E40F1FAB8EC2EFDF24ED /* Load */,
+				165D0AA90509F1FDB69C671A /* ML */,
+				80C8A7C85419BC59C32CF395 /* Performance */,
+				F6A22EE6D0EC164EE63EDECA /* Pipeline */,
+				3595B8E33CC25D0854AEA889 /* Readiness */,
+				032C872A9091A7C977F3D492 /* Recovery */,
+				5A62F62F3FB8A3B60F7A26BB /* Resources */,
+				118EE5E7979C7137E28C317F /* Risk */,
+				91FCBCE0B68CC83F8F72BECA /* Sleep */,
+				38C6DF391AE1A90292A0205D /* Statistics */,
+				1A4583B1AF9288D909F99E36 /* Views */,
+			);
+			path = OptiTrain;
+			sourceTree = "<group>";
+		};
+		118EE5E7979C7137E28C317F /* Risk */ = {
+			isa = PBXGroup;
+			children = (
+				44738849D0D43939B4AEAFB1 /* InjuryAndBurnoutRisk.swift */,
+				1BF40016A600597443DB3318 /* PlateauDetector.swift */,
+			);
+			path = Risk;
+			sourceTree = "<group>";
+		};
+		155728F15ED1EBDE4A5F0D3C = {
+			isa = PBXGroup;
+			children = (
+				034E992EC66BA3E766C7AAC3 /* OptiTrain */,
+				BF0A366720684A2EAA00AAA9 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		165D0AA90509F1FDB69C671A /* ML */ = {
+			isa = PBXGroup;
+			children = (
+				A6CA09E284BA27B529F85123 /* FeatureExtractor.swift */,
+				46A4CFE0371123B85F003F9E /* ResponseProfile.swift */,
+			);
+			path = ML;
+			sourceTree = "<group>";
+		};
+		1A4583B1AF9288D909F99E36 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				7D0499964C28824CA0185551 /* AdvisorCardView.swift */,
+				BEEF000000000000000000F4 /* BodyEfficiencyView.swift */,
+				B1842CF61FA65E68EC4F3109 /* DiagnosticsView.swift */,
+				72B8194BF45BB02DDF8C540A /* EventReadinessView.swift */,
+				375F92AE013456E8D9732B53 /* IntelligenceCards.swift */,
+				A1B2C3D4E5F600000000A002 /* MetricGlossary.swift */,
+				A1B2C3D4E5F600000000C002 /* AICoachCard.swift */,
+				A1B2C3D4E5F600000000F002 /* GoalView.swift */,
+				B8035F515CD4544561E1BB72 /* ReadinessBreakdownView.swift */,
+				AE40F60E13972261BDE9E561 /* ReadinessHeroCard.swift */,
+				B4761BE94D0AE3E9D55974C6 /* SettingsView.swift */,
+				5C31CD8C18B5E68A1AD220DF /* TodayView.swift */,
+				D7A3585511FB1A02BF4521A2 /* TrendsView.swift */,
+				5462643296BE8652E596452E /* WorkoutsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		20B4E40F1FAB8EC2EFDF24ED /* Load */ = {
+			isa = PBXGroup;
+			children = (
+				CFF6BCC975F506790583D6B8 /* TrainingImpulse.swift */,
+				BA9E186E7117CA4BDD25E916 /* TrainingLoadEngine.swift */,
+			);
+			path = Load;
+			sourceTree = "<group>";
+		};
+		3595B8E33CC25D0854AEA889 /* Readiness */ = {
+			isa = PBXGroup;
+			children = (
+				A5639DF695E6FEEB2299582F /* ReadinessCalculator.swift */,
+				5AEF71636A9949BB59063C10 /* ReadinessModels.swift */,
+			);
+			path = Readiness;
+			sourceTree = "<group>";
+		};
+		38C6DF391AE1A90292A0205D /* Statistics */ = {
+			isa = PBXGroup;
+			children = (
+				24CDBAFAB7B5BA1ABE89A38C /* AdaptiveBaseline.swift */,
+				8F3553FBD381A15C1B4F9F5A /* EWMA.swift */,
+				4D1EE5EEFA8EBD00D7F18DD0 /* RobustStatistics.swift */,
+			);
+			path = Statistics;
+			sourceTree = "<group>";
+		};
+		4B121DDCCE7A960F8F877E91 /* Health */ = {
+			isa = PBXGroup;
+			children = (
+				B3ADCDAEE0B1505C3ED86A72 /* HealthKitManager.swift */,
+				47BB6E5934C69B917C57739F /* HealthMetrics.swift */,
+			);
+			path = Health;
+			sourceTree = "<group>";
+		};
+		527CE34CD3BDA3822D17E1D7 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				3BFFE56DE20E8E095E327588 /* OptiTrainApp.swift */,
+				6C16F3C374D0A394F4B5508D /* RootView.swift */,
+				3A14D53C3D517FA8297FCF64 /* UserSettings.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		5A62F62F3FB8A3B60F7A26BB /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				16EB536C9E26A8E933DC95CC /* Assets.xcassets */,
+				68104DF92058F84842BC671D /* Info.plist */,
+				C6492D46F98416379796333B /* OptiTrain.entitlements */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		80C8A7C85419BC59C32CF395 /* Performance */ = {
+			isa = PBXGroup;
+			children = (
+				ECD60CCEDC782EE4B2565FE6 /* AerobicEfficiency.swift */,
+				BEEF000000000000000000F2 /* BodyEfficiency.swift */,
+				6A3E0F4C793B968E0D33A401 /* RaceTimePrediction.swift */,
+				D966B503270C3B74637403DC /* VO2maxTrajectory.swift */,
+			);
+			path = Performance;
+			sourceTree = "<group>";
+		};
+		91FCBCE0B68CC83F8F72BECA /* Sleep */ = {
+			isa = PBXGroup;
+			children = (
+				1475EB46FB1F9FFFC760BA27 /* SleepIntelligence.swift */,
+			);
+			path = Sleep;
+			sourceTree = "<group>";
+		};
+		9C9017831C37959CF91BE26D /* Advisor */ = {
+			isa = PBXGroup;
+			children = (
+				B8477412AADDC1A09B943B8C /* ActivityAdvisor.swift */,
+				A1B2C3D4E5F600000000B002 /* AICoach.swift */,
+				54C6BD3DAF78BF9F5224F11E /* AdvisorModels.swift */,
+				A1B2C3D4E5F600000000D002 /* Goal.swift */,
+				A1B2C3D4E5F600000000E002 /* GoalCoach.swift */,
+			);
+			path = Advisor;
+			sourceTree = "<group>";
+		};
+		BF0A366720684A2EAA00AAA9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				1000FC2231B9536CD2973F1C /* OptiTrain.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		C84F25EF968A1FDFC7B9BC28 /* EventReadiness */ = {
+			isa = PBXGroup;
+			children = (
+				BACCF0C7FFB17E405F38B92C /* EventReadinessEngine.swift */,
+				818475199726925D2DC68DD3 /* EventWeightingMatrix.swift */,
+				4616B32E9D41C03EA593CF00 /* PhysiologyProfile.swift */,
+				E5D61A7E91F4CFBD7FF7F855 /* PhysiologyProfileBuilder.swift */,
+			);
+			path = EventReadiness;
+			sourceTree = "<group>";
+		};
+		F6A22EE6D0EC164EE63EDECA /* Pipeline */ = {
+			isa = PBXGroup;
+			children = (
+				3DD24C50ED6F71CE0592F6C9 /* AdaptiveIntelligencePipeline.swift */,
+				9CCCC9B455150BDB64A099D1 /* AdaptiveIntelligenceSnapshot.swift */,
+			);
+			path = Pipeline;
+			sourceTree = "<group>";
+		};
+		FEB3767073AFA7FE7CD7B6E8 /* Explanation */ = {
+			isa = PBXGroup;
+			children = (
+				57E99BA1F3151762C94A8E0C /* Confidence.swift */,
+				43B3DDF1F648DF9FB0F2CD08 /* Explanation.swift */,
+			);
+			path = Explanation;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		36A60EA50363B67639579355 /* OptiTrain */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 43302A8261AE0A400956666B /* Build configuration list for PBXNativeTarget "OptiTrain" */;
+			buildPhases = (
+				78A231D8FA287094DCCEE7E1 /* Sources */,
+				FEE53E66D778798E1D519CE3 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = OptiTrain;
+			packageProductDependencies = (
+			);
+			productName = OptiTrain;
+			productReference = 1000FC2231B9536CD2973F1C /* OptiTrain.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		8DD2398A2EE9835DCD38DAEA /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+			};
+			buildConfigurationList = F71046C0014F9AB64368AE7D /* Build configuration list for PBXProject "OptiTrain" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 155728F15ED1EBDE4A5F0D3C;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = BF0A366720684A2EAA00AAA9 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				36A60EA50363B67639579355 /* OptiTrain */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		FEE53E66D778798E1D519CE3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4BF77AC0F5E87370AA509FCC /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		78A231D8FA287094DCCEE7E1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				06F381FE11CF430DE138E2BF /* ActivityAdvisor.swift in Sources */,
+				A1B2C3D4E5F600000000B001 /* AICoach.swift in Sources */,
+				A1B2C3D4E5F600000000C001 /* AICoachCard.swift in Sources */,
+				A1B2C3D4E5F600000000D001 /* Goal.swift in Sources */,
+				A1B2C3D4E5F600000000E001 /* GoalCoach.swift in Sources */,
+				A1B2C3D4E5F600000000F001 /* GoalView.swift in Sources */,
+				34FAD926681B656368ACFB3A /* AdaptiveBaseline.swift in Sources */,
+				8E2E6A27B2B6D407E6F940F2 /* AdaptiveIntelligencePipeline.swift in Sources */,
+				C0BC880E467B6975F679C8CF /* AdaptiveIntelligenceSnapshot.swift in Sources */,
+				EF54873D07B8545FF133BA44 /* AdvisorCardView.swift in Sources */,
+				78F86AF7003BE689ABB5EABD /* AdvisorModels.swift in Sources */,
+				B2D7B7CD923A9450759FD13C /* AerobicEfficiency.swift in Sources */,
+				B2C3CFF7350EE03ED3820959 /* AutonomicStability.swift in Sources */,
+				BEEF000000000000000000F1 /* BodyEfficiency.swift in Sources */,
+				BEEF000000000000000000F3 /* BodyEfficiencyView.swift in Sources */,
+				4103E185F165711315C31698 /* Confidence.swift in Sources */,
+				DBCC1A6B832446F12999EB38 /* DiagnosticsView.swift in Sources */,
+				8AD5F4B375BCF86FBA814AD7 /* EWMA.swift in Sources */,
+				E5B2FD644E436A2004824B74 /* EventReadinessEngine.swift in Sources */,
+				E817A7691A0D382A04420C56 /* EventReadinessView.swift in Sources */,
+				2B13533D76775CE44FC7FED3 /* EventWeightingMatrix.swift in Sources */,
+				5FC672C7089194FE6E3F4DDA /* Explanation.swift in Sources */,
+				1C6022C03266E6CB73A15A7C /* FeatureExtractor.swift in Sources */,
+				ED9EF4225B3415FC8D16026C /* HealthKitManager.swift in Sources */,
+				79F12CB114FB33F3311CFBEF /* HealthMetrics.swift in Sources */,
+				E9559AECA0AC84C66FE53544 /* InjuryAndBurnoutRisk.swift in Sources */,
+				B780E95E3C311E6F52941AA5 /* IntelligenceCards.swift in Sources */,
+				A1B2C3D4E5F600000000A001 /* MetricGlossary.swift in Sources */,
+				2DD9151EA73B79D19EC14579 /* OptiTrainApp.swift in Sources */,
+				355F55CA7D9717D34FF608FF /* PhysiologyProfile.swift in Sources */,
+				CB34482225BABB2B5ACE88AD /* PhysiologyProfileBuilder.swift in Sources */,
+				FDE683672E6B4C8A286A4F70 /* PlateauDetector.swift in Sources */,
+				BAC3D7F68EEB6B26E6422363 /* RaceTimePrediction.swift in Sources */,
+				89E397A56B8D595D88074D35 /* ReadinessBreakdownView.swift in Sources */,
+				1C9DFA8FA07325ADF446B7E6 /* ReadinessCalculator.swift in Sources */,
+				810BFFF49476C7743054267F /* ReadinessHeroCard.swift in Sources */,
+				58A87CAE889A94F50C5BC3E1 /* ReadinessModels.swift in Sources */,
+				A6F94D9B9F62F85AE289CF30 /* RecoveryDebtModel.swift in Sources */,
+				97BA7DDE180D56089038A317 /* RecoveryHalfLife.swift in Sources */,
+				E82C9DE3F0152568A252A802 /* ResponseProfile.swift in Sources */,
+				4E22FBB5B5C5E7D66DCE07DF /* RobustStatistics.swift in Sources */,
+				78AF904D57251FFB8332AFC9 /* RootView.swift in Sources */,
+				3421FFAC9EB24B6960FC20D4 /* SettingsView.swift in Sources */,
+				4F1F3E55ED55D0310DD1ECFD /* SleepIntelligence.swift in Sources */,
+				F7F2FEE8980F3E642B9ACA64 /* TodayView.swift in Sources */,
+				435E3A4FD7D61AE3A303B8DD /* TrainingImpulse.swift in Sources */,
+				2F14E5445CDA166B1C8CE58C /* TrainingLoadEngine.swift in Sources */,
+				8FF1105B20954AEC8459F57C /* TrendsView.swift in Sources */,
+				245E9EFEFF79E0F2687D2DB9 /* UserSettings.swift in Sources */,
+				31F3B89F86D4E9CCF30815BF /* VO2maxTrajectory.swift in Sources */,
+				0D55E3AAA67DC6AB5DA80ED4 /* WorkoutsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		3540E3B78985A71FAC379FC1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = OptiTrain/Resources/OptiTrain.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 93R6GPQDRJ;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = OptiTrain/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.kacper.optitrain;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		3F73992F0FBE2399A30ED79A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 0.3.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.10;
+			};
+			name = Debug;
+		};
+		64C994E43C9C6C594F25E6DE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = OptiTrain/Resources/OptiTrain.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 93R6GPQDRJ;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = OptiTrain/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.kacper.optitrain;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		82E9D528BB8CDDF110A88153 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 0.3.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.10;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		43302A8261AE0A400956666B /* Build configuration list for PBXNativeTarget "OptiTrain" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3540E3B78985A71FAC379FC1 /* Debug */,
+				64C994E43C9C6C594F25E6DE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F71046C0014F9AB64368AE7D /* Build configuration list for PBXProject "OptiTrain" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3F73992F0FBE2399A30ED79A /* Debug */,
+				82E9D528BB8CDDF110A88153 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 8DD2398A2EE9835DCD38DAEA /* Project object */;
+}

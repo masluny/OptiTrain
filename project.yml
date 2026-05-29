@@ -1,0 +1,42 @@
+name: OptiTrain
+options:
+  bundleIdPrefix: com.kacper.optitrain
+  deploymentTarget:
+    iOS: "18.0"
+  developmentLanguage: en
+settings:
+  base:
+    SWIFT_VERSION: "5.10"
+    IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+    MARKETING_VERSION: "0.3.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  OptiTrain:
+    type: application
+    platform: iOS
+    sources:
+      - path: OptiTrain
+    info:
+      path: OptiTrain/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: OptiTrain
+        CFBundleIconName: AppIcon
+        UILaunchScreen: {}
+        NSHealthShareUsageDescription: OptiTrain reads your Apple Health data (sleep, HRV, resting heart rate, workouts, wrist temperature, steps) to compute your daily training readiness and recommend the right session.
+        NSHealthUpdateUsageDescription: OptiTrain logs strength workouts you record in-app back to Apple Health so they show up in your activity rings.
+        UIBackgroundModes:
+          - processing
+        BGTaskSchedulerPermittedIdentifiers:
+          - com.kacper.optitrain.morningRefresh
+    entitlements:
+      path: OptiTrain/Resources/OptiTrain.entitlements
+      properties:
+        com.apple.developer.healthkit: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.kacper.optitrain
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTS_MACCATALYST: NO
+        ENABLE_PREVIEWS: YES
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
