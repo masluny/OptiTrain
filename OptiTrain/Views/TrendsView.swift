@@ -9,6 +9,7 @@ struct TrendsView: View {
     /// narrow to one family of signals so the screen isn't a wall of charts.
     enum TrendCategory: String, CaseIterable, Identifiable {
         case all = "All"
+        case performance = "Performance"
         case recovery = "Recovery"
         case sleep = "Sleep"
         case training = "Training"
@@ -17,6 +18,7 @@ struct TrendsView: View {
         var symbol: String {
             switch self {
             case .all: "square.grid.2x2"
+            case .performance: "bolt.fill"
             case .recovery: "heart.text.square.fill"
             case .sleep: "bed.double.fill"
             case .training: "figure.run"
@@ -38,6 +40,13 @@ struct TrendsView: View {
                     Text("Last \(session.history.count) days")
                         .font(.caption).foregroundStyle(.secondary)
 
+                    if shows(.performance) {
+                        sectionHeader("Performance", systemImage: "bolt.fill", tint: .green)
+                        athleteLevelChart
+                        vo2maxChart
+                        fitnessChart
+                        formChart
+                    }
                     if shows(.recovery) {
                         sectionHeader("Recovery", systemImage: "heart.text.square.fill", tint: .pink)
                         hrvChart
@@ -233,6 +242,158 @@ struct TrendsView: View {
                     .foregroundStyle(.teal)
             }
         }
+    }
+
+    // MARK: - Performance charts (the headlines for runners)
+
+    /// Horizontal bar chart of the four Athlete-Level systems — a *snapshot*
+    /// rather than a trend, because Athlete Level isn't stored historically.
+    /// Shows where the body is strongest vs. weakest at a glance.
+    private var athleteLevelChart: some View {
+        let systems = session.intelligence?.bodyEfficiency.systems ?? []
+        let placeholder = systems.map { TrendPoint(date: Date(), value: $0.score) }
+        return chartCard(title: "Athlete Level systems", unit: "score 0–100", points: placeholder) {
+            Chart(systems) { s in
+                BarMark(
+                    x: .value("Score", s.score),
+                    y: .value("System", s.kind.shortLabel)
+                )
+                .foregroundStyle(EfficiencyPalette.color(forScore100: s.score))
+                .annotation(position: .trailing) {
+                    Text("\(Int(s.score))")
+                        .font(.caption2.monospacedDigit().bold())
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .chartXScale(domain: 0...100)
+        }
+    }
+
+    private var vo2maxChart: some View {
+        let points = session.vo2Samples.map { TrendPoint(date: $0.date, value: $0.value) }
+        let band = vo2GoodBand
+        let yDomain = vo2YDomain(points: points, band: band)
+        return chartCard(title: "VO₂max", unit: "ml/kg/min · green band = good (\(bandSubtitle))", points: points) {
+            Chart {
+                // Age/sex-adjusted "Good" band — solid translucent fill framed
+                // by two thin rules so the target reads at a glance even when
+                // the line passes through it.
+                RectangleMark(yStart: .value("Good low", band.low),
+                              yEnd:   .value("Good high", band.high))
+                    .foregroundStyle(.green.opacity(0.20))
+                RuleMark(y: .value("Good low", band.low))
+                    .lineStyle(StrokeStyle(lineWidth: 1.5))
+                    .foregroundStyle(.green.opacity(0.55))
+                RuleMark(y: .value("Good high", band.high))
+                    .lineStyle(StrokeStyle(lineWidth: 1.5))
+                    .foregroundStyle(.green.opacity(0.55))
+
+                ForEach(points, id: \.date) { p in
+                    LineMark(x: .value("Day", p.date, unit: .day), y: .value("VO₂max", p.value))
+                        .interpolationMethod(.monotone)
+                        .foregroundStyle(.green)
+                    PointMark(x: .value("Day", p.date, unit: .day), y: .value("VO₂max", p.value))
+                        .foregroundStyle(.green)
+                        .symbolSize(18)
+                }
+            }
+            .chartYScale(domain: yDomain)
+        }
+    }
+
+    /// A tight Y-axis domain for the VO₂max chart — the union of the data
+    /// points and the reference band, plus a small margin so the line never
+    /// runs flush with the chart edges. Swift Charts would otherwise pick a
+    /// fairly wide auto-domain that pushes the data flat against one edge;
+    /// this gives the line vertical breathing room without zooming so far in
+    /// that day-to-day noise looks like a trend.
+    private func vo2YDomain(points: [TrendPoint], band: VO2GoodBand) -> ClosedRange<Double> {
+        var values = [band.low, band.high]
+        values.append(contentsOf: points.map(\.value))
+        guard let lo = values.min(), let hi = values.max() else { return 20...50 }
+        let padding = max(2.0, (hi - lo) * 0.10)
+        return (lo - padding)...(hi + padding)
+    }
+
+    /// ACSM "Good" VO₂max range, picked for the athlete's age + biological sex.
+    /// Brackets the user supplied verbatim (20-29, 40-49, 60+) plus midpoint
+    /// interpolations for the gaps (30-39, 50-59). Falls back to the male
+    /// 30-39 range if Apple Health hasn't shared age/sex.
+    private struct VO2GoodBand { let low: Double; let high: Double }
+
+    private var vo2GoodBand: VO2GoodBand {
+        let age = session.age ?? 35
+        if session.sex == .female {
+            switch age {
+            case ..<30:  return .init(low: 32.0, high: 36.0)
+            case 30..<40: return .init(low: 31.0, high: 34.5)  // interpolated
+            case 40..<50: return .init(low: 30.0, high: 33.0)
+            case 50..<60: return .init(low: 25.5, high: 29.0)  // interpolated
+            default:     return .init(low: 21.0, high: 25.0)
+            }
+        } else {
+            switch age {
+            case ..<30:  return .init(low: 42.5, high: 46.4)
+            case 30..<40: return .init(low: 40.75, high: 45.05) // interpolated
+            case 40..<50: return .init(low: 39.0, high: 43.7)
+            case 50..<60: return .init(low: 32.5, high: 36.85) // interpolated
+            default:     return .init(low: 26.0, high: 30.0)
+            }
+        }
+    }
+
+    /// Short descriptor of which ACSM bracket the band came from — shown next
+    /// to the unit so the reader knows the band is *theirs*, not generic.
+    private var bandSubtitle: String {
+        let sexLabel = session.sex == .female ? "♀" : "♂"
+        if let age = session.age { return "\(sexLabel) \(age)" }
+        return sexLabel
+    }
+
+    /// Fitness = CTL, the 42-day EWMA of daily training load — the slow-moving
+    /// curve that captures how much chronic work the body has absorbed.
+    private var fitnessChart: some View {
+        let points = ctlTsbSeries.ctl
+        return chartCard(title: "Fitness (CTL)", unit: "42-day EWMA of daily load", points: points) {
+            Chart(points, id: \.date) { p in
+                AreaMark(x: .value("Day", p.date, unit: .day), y: .value("CTL", p.value))
+                    .foregroundStyle(.blue.opacity(0.18))
+                    .interpolationMethod(.monotone)
+                LineMark(x: .value("Day", p.date, unit: .day), y: .value("CTL", p.value))
+                    .interpolationMethod(.monotone)
+                    .foregroundStyle(.blue)
+            }
+        }
+    }
+
+    /// Form = CTL − ATL: positive = tapered and fresh, negative = fatigued.
+    /// The same TSB curve TrainingPeaks/Coggan use for race-readiness.
+    private var formChart: some View {
+        let points = ctlTsbSeries.tsb
+        return chartCard(title: "Form (TSB)", unit: "+ fresh · − fatigued", points: points) {
+            Chart(points, id: \.date) { p in
+                LineMark(x: .value("Day", p.date, unit: .day), y: .value("TSB", p.value))
+                    .interpolationMethod(.monotone)
+                    .foregroundStyle(.purple)
+                RuleMark(y: .value("Zero", 0))
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    /// Computes the CTL and TSB series once per render, sharing work between
+    /// the Fitness and Form charts. Empty when there isn't enough history.
+    private var ctlTsbSeries: (ctl: [TrendPoint], tsb: [TrendPoint]) {
+        let history = session.history
+        guard history.count >= 2 else { return ([], []) }
+        let loads = history.map { $0.workoutLoad ?? 0 }
+        let ctl = EWMA.series(of: loads, tau: 42)
+        let atl = EWMA.series(of: loads, tau: 7)
+        let ctlPts = zip(history, ctl).map { TrendPoint(date: $0.0.date, value: $0.1) }
+        let tsbPts = zip(history, zip(ctl, atl).map { $0 - $1 })
+            .map { TrendPoint(date: $0.0.date, value: $0.1) }
+        return (ctlPts, tsbPts)
     }
 
     // MARK: - Helpers

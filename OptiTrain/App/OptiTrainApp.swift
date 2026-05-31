@@ -28,6 +28,14 @@ final class AppSession {
     var plan: AdvisorPlan?
     var history: [DailyMetrics] = []
     var recentWorkouts: [WorkoutSummary] = []
+    /// Raw VO₂max samples from HealthKit (date + value), exposed so the Trends
+    /// view's Performance section can plot the trajectory directly without
+    /// re-fetching from the engine.
+    var vo2Samples: [VO2maxTrajectory.Sample] = []
+    /// HealthKit demographics — drive the age/sex-adjusted reference band on
+    /// the VO₂max chart in Trends. nil when not shared with Apple Health.
+    var age: Int?
+    var sex: AthleteSex?
     /// When true, today's own sleep was missing so the score reuses the most
     /// recent recorded night (still awake past midnight, or watch not worn to bed).
     var showingPreviousDay: Bool = false
@@ -105,6 +113,9 @@ final class AppSession {
             self.todayReadiness = score
             self.plan = plan
             self.recentWorkouts = weekWorkouts
+            self.vo2Samples = vo2Samples
+            self.age = age
+            self.sex = sex
             self.showingPreviousDay = usingFallback
             self.scoreDate = scoreDay.date
             self.sleepCarriedFrom = carriedSleepFrom

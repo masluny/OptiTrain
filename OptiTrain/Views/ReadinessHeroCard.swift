@@ -9,8 +9,10 @@ struct ReadinessHeroCard: View {
     let score: ReadinessScore
     @State private var showingInfo = false
 
-    private let gaugeSize: CGFloat = 168
-    private let lineWidth: CGFloat = 12
+    // Compact size — this card now lives side-by-side with the Athlete Level
+    // card on the Today page, so the gauge is roughly 65% of its old size.
+    private let gaugeSize: CGFloat = 108
+    private let lineWidth: CGFloat = 8
     private let gap = 0.16                       // fraction of the circle left open at the bottom
 
     private var sweep: Double { (1 - gap) * 360 }
@@ -24,19 +26,25 @@ struct ReadinessHeroCard: View {
 
     var body: some View {
         Button { showingInfo = true } label: {
-        VStack(spacing: 14) {
+        VStack(spacing: 0) {
             // Header sits in the top-left corner; the verdict text used to live
             // below the gauge but moved into the info sheet so the card itself
             // reads at a glance.
-            HStack {
-                Text("Training Readiness")
+            HStack(spacing: 6) {
+                // `.headline` matches the Breakdown card's header so the three
+                // titles on the Today page agree. lineLimit + scale floor are
+                // defensive against Dynamic Type re-introducing a wrap on the
+                // narrow ~146pt content width.
+                Text("Training ready")
                     .font(.headline)
-                Spacer()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                Spacer(minLength: 0)
                 Image(systemName: "info.circle")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
-
+            Spacer(minLength: 0)
             ZStack {
                 // Empty track behind the colored ring.
                 Circle()
@@ -65,7 +73,7 @@ struct ReadinessHeroCard: View {
                 ForEach([40, 55, 70, 85], id: \.self) { boundary in
                     Capsule()
                         .fill(Color.black)
-                        .frame(width: 2.5, height: lineWidth)
+                        .frame(width: 2, height: lineWidth)
                         .offset(y: -pathRadius)
                         .rotationEffect(.degrees(angle(for: Double(boundary))))
                 }
@@ -74,31 +82,32 @@ struct ReadinessHeroCard: View {
                 Circle()
                     .fill(.white)
                     .frame(width: lineWidth - 3, height: lineWidth - 3)
-                    .overlay(Circle().stroke(.black, lineWidth: 2.5))
-                    .shadow(color: .black.opacity(0.4), radius: 2)
+                    .overlay(Circle().stroke(.black, lineWidth: 2))
+                    .shadow(color: .black.opacity(0.4), radius: 1.5)
                     .offset(y: -pathRadius)
                     .rotationEffect(.degrees(angle(for: Double(score.value))))
                     .animation(.easeOut(duration: 0.6), value: score.value)
 
                 // Center readout — just the number and the band, since the
                 // "Training Readiness" label now lives in the top-left header.
-                VStack(spacing: 2) {
+                VStack(spacing: 1) {
                     Text("\(score.value)")
-                        .font(.system(size: 52, weight: .bold, design: .rounded))
+                        .font(.system(size: 30, weight: .bold, design: .rounded))
                         .foregroundStyle(bandColor)
                         .contentTransition(.numericText())
                     Text(score.band.label)
-                        .font(.title3.weight(.semibold).italic())
+                        .font(.callout.weight(.semibold).italic())
                         .foregroundStyle(.primary)
                 }
             }
             .frame(width: gaugeSize, height: gaugeSize)
+            Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
-        .padding(.horizontal, 20)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 24))
-        .contentShape(RoundedRectangle(cornerRadius: 24))
+        .padding(14)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 20))
+        .aspectRatio(1, contentMode: .fit)
+        .contentShape(RoundedRectangle(cornerRadius: 20))
         }
         .buttonStyle(.plain)
         .sheet(isPresented: $showingInfo) {
