@@ -20,21 +20,23 @@ struct TodayView: View {
                     if session.showingPreviousDay, let date = session.sleepCarriedFrom {
                         StaleDayBanner(date: date)
                     }
-                    if let score = session.todayReadiness {
-                        ReadinessHeroCard(score: score)
+                    // Two square cards side-by-side at the top: Training
+                    // Readiness on the left, Athlete Level on the right.
+                    if let score = session.todayReadiness, let snap = session.intelligence {
+                        HStack(spacing: 12) {
+                            ReadinessHeroCard(score: score)
+                            NavigationLink {
+                                BodyEfficiencyView(snapshot: snap.bodyEfficiency,
+                                                   date: session.scoreDate ?? Date())
+                            } label: {
+                                BodyEfficiencyCard(snapshot: snap.bodyEfficiency)
+                            }
+                            .buttonStyle(.plain)
+                        }
                         ReadinessBreakdownView(score: score)
-                    }
-                    if let snap = session.intelligence {
-                        if aiFeaturesEnabled, let score = session.todayReadiness {
+                        if aiFeaturesEnabled {
                             AICoachCard(readiness: score, snapshot: snap, plan: session.plan)
                         }
-                        NavigationLink {
-                            BodyEfficiencyView(snapshot: snap.bodyEfficiency,
-                                               date: session.scoreDate ?? Date())
-                        } label: {
-                            BodyEfficiencyCard(snapshot: snap.bodyEfficiency)
-                        }
-                        .buttonStyle(.plain)
                     }
                     if let plan = session.plan {
                         AdvisorCardView(plan: plan)

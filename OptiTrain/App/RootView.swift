@@ -2,59 +2,20 @@ import SwiftUI
 
 struct RootView: View {
     @Environment(AppSession.self) private var session
-    @State private var tab: AppTab = .today
-
-    /// The five top-level pages, in swipe order. CaseIterable so the horizontal
-    /// swipe gesture can walk through them deterministically.
-    enum AppTab: Hashable, CaseIterable {
-        case today, races, trends, goal, settings
-    }
 
     var body: some View {
-        TabView(selection: $tab) {
+        TabView {
             NavigationStack { TodayView().shineBackground() }
                 .tabItem { Label("Today", systemImage: "sun.max.fill") }
-                .tag(AppTab.today)
             NavigationStack { EventReadinessView().shineBackground() }
                 .tabItem { Label("Races", systemImage: "flag.checkered") }
-                .tag(AppTab.races)
             NavigationStack { TrendsView().shineBackground() }
                 .tabItem { Label("Trends", systemImage: "chart.line.uptrend.xyaxis") }
-                .tag(AppTab.trends)
             NavigationStack { GoalView().shineBackground() }
                 .tabItem { Label("Goal", systemImage: "target") }
-                .tag(AppTab.goal)
             NavigationStack { SettingsView() }
                 .tabItem { Label("Settings", systemImage: "gearshape.fill") }
-                .tag(AppTab.settings)
         }
-        // Runs *alongside* the embedded ScrollViews so vertical scrolling and
-        // button taps still work — we only react in `onEnded` when the drag is
-        // unambiguously horizontal.
-        .simultaneousGesture(tabSwipeGesture)
-    }
-
-    /// Horizontal-swipe-to-walk-between-tabs. The shine background lives
-    /// inside each tab (and is identical across tabs), so when we switch
-    /// selection there's no slide — it reads as a static background.
-    private var tabSwipeGesture: some Gesture {
-        DragGesture(minimumDistance: 30)
-            .onEnded { value in
-                let dx = value.translation.width
-                let dy = value.translation.height
-                // Don't fight NavigationStack's left-edge swipe-to-go-back.
-                if value.startLocation.x < 30, dx > 0 { return }
-                // Require a clearly horizontal drag of meaningful magnitude —
-                // a vertical scroll has dx ≈ 0 and is rejected by both guards.
-                guard abs(dx) > 60, abs(dx) > abs(dy) * 1.5 else { return }
-                let cases = AppTab.allCases
-                guard let idx = cases.firstIndex(of: tab) else { return }
-                if dx < 0, idx < cases.count - 1 {
-                    tab = cases[idx + 1]
-                } else if dx > 0, idx > 0 {
-                    tab = cases[idx - 1]
-                }
-            }
     }
 }
 

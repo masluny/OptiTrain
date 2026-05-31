@@ -66,40 +66,54 @@ private struct TierPill: View {
 // MARK: - Home-screen card
 
 /// Compact Athlete Level summary for the Today tab. Tapping it pushes the full
-/// `BodyEfficiencyView`. This is the feature's primary entry point.
+/// `BodyEfficiencyView`. This is the feature's primary entry point. Designed to
+/// sit as a square next to ReadinessHeroCard in a row.
 struct BodyEfficiencyCard: View {
     let snapshot: BodyEfficiency.Snapshot
 
     var body: some View {
-        HStack(spacing: 16) {
-            BodyEfficiencyFigure(systems: snapshot.systems, overallScore: snapshot.score, glowRadius: 12)
-                .frame(width: 64, height: 128)
-
-            VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                // `.headline` to match the Breakdown card's header weight, with
+                // lineLimit + scale floor as defensive insurance on tight rows.
                 Text("Athlete Level")
                     .font(.headline)
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.caption.bold())
+                    .foregroundStyle(.tertiary)
+            }
+            HStack(alignment: .top, spacing: 10) {
+                BodyEfficiencyFigure(systems: snapshot.systems, overallScore: snapshot.score, glowRadius: 8)
+                    .frame(width: 44, height: 104)
+                // Score stacked vertically — big number on top, tiny "/ 10"
+                // below — so an inline HStack can never wrap a side-by-side
+                // "6.5/10" on a narrow column. Tier pill anchors the bottom.
+                VStack(alignment: .leading, spacing: 0) {
                     Text(snapshot.formattedScore)
-                        .font(.system(size: 44, weight: .bold, design: .rounded))
+                        .font(.system(size: 30, weight: .bold, design: .rounded))
                         .monospacedDigit()
                         .foregroundStyle(EfficiencyPalette.color(forScore10: snapshot.score))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                     Text("/ 10")
-                        .font(.title3.weight(.semibold))
+                        .font(.caption2.weight(.medium))
                         .foregroundStyle(.secondary)
+                    Spacer(minLength: 6)
+                    TierPill(tier: snapshot.tier, score: snapshot.score)
+                    Spacer(minLength: 0)
                 }
-                TierPill(tier: snapshot.tier, score: snapshot.score)
-                // The long tier headline ("Strong and capable across every
-                // system.") used to render here; removed to keep the home
-                // card scannable. It's still shown on the full Athlete Level
-                // screen.
+                Spacer(minLength: 0)
             }
             Spacer(minLength: 0)
-            Image(systemName: "chevron.right")
-                .font(.caption.bold()).foregroundStyle(.tertiary)
         }
-        .padding(16)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 18))
-        .contentShape(RoundedRectangle(cornerRadius: 18))
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(14)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 20))
+        .aspectRatio(1, contentMode: .fit)
+        .contentShape(RoundedRectangle(cornerRadius: 20))
     }
 }
 
