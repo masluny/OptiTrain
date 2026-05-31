@@ -18,6 +18,10 @@ struct AdaptiveIntelligencePipeline {
         let scoreDate: Date
         let usingPreviousDay: Bool
         let useWristTemperature: Bool
+        /// Fraction (0...1) of recent days with any observed signal.
+        let observedDayCoverage: Double
+        /// Number of days loaded into `history`.
+        let historyWindowDays: Int
     }
 
     // Engines are tiny structs — instantiating per-run is essentially free.
@@ -52,7 +56,13 @@ struct AdaptiveIntelligencePipeline {
         // Daily TRIMP for the last 60 days.
         let calendar = Calendar.current
         let workoutsByDay = Dictionary(grouping: i.workouts) { calendar.startOfDay(for: $0.start) }
-        let daily: [TrainingLoadEngine.DailyLoad] = sortedHistory.map { d in
+        // Avoid treating fully missing watch days as confirmed zero-load days.
+        let observedHistory = sortedHistory.filter { d in
+            let dayKey = calendar.startOfDay(for: d.date)
+            let hasWorkout = !(workoutsByDay[dayKey] ?? []).isEmpty
+            return d.hasAnySignal || hasWorkout
+        }
+        let daily: [TrainingLoadEngine.DailyLoad] = observedHistory.map { d in
             let dayKey = calendar.startOfDay(for: d.date)
             let dayWs = workoutsByDay[dayKey] ?? []
             let trimp = TrainingImpulse.daily(dayWs, restingHR: restingHR, maxHR: maxHR, sex: sex)
@@ -70,7 +80,12 @@ struct AdaptiveIntelligencePipeline {
 
         // Race predictions for every supported distance.
         let bestRef = racePrediction.bestReference(from: i.workouts)
-        let longestRun = i.workouts.filter { $0.kind == .run }.compactMap(\.distanceMeters).max() ?? 0
+        let longestRunWindowDays = 120
+        let longestRunCutoff = calendar.date(byAdding: .day, value: -longestRunWindowDays, to: i.scoreDate) ?? i.scoreDate
+        let longestRun = i.workouts
+            .filter { $0.kind == .run && $0.start >= longestRunCutoff }
+            .compactMap(\.distanceMeters)
+            .max() ?? 0
         let predictions: [RaceTimePrediction.Prediction] = {
             guard let ref = bestRef else { return [] }
             return RaceTimePrediction.RaceDistance.allCases.map {
@@ -92,10 +107,11 @@ struct AdaptiveIntelligencePipeline {
             maxHR: maxHR
         ))
         let baseConfidence = Confidence.combine([
-            Confidence.fromSampleDensity(present: sortedHistory.count, target: 28),
+            Confidence.fromSampleDensity(present: observedHistory.count, target: 28),
             Confidence.fromSampleDensity(present: i.workouts.count, target: 12),
             loadSnap?.confidence ?? Confidence(0.5),
-            debt?.confidence ?? Confidence(0.5)
+            debt?.confidence ?? Confidence(0.5),
+            Confidence(i.observedDayCoverage)
         ])
         // Are VO₂max and aerobic efficiency trending up? Folded into one 0–1
         // signal (0.5 = flat) that lets demonstrated *progress* lift race
@@ -109,7 +125,12 @@ struct AdaptiveIntelligencePipeline {
         }()
         let events = eventEngine.allReadiness(
             profile: profile,
-            performance: .init(reference: bestRef, longestRunMeters: longestRun, fitnessTrend: fitnessTrend),
+            performance: .init(reference: bestRef,
+                               longestRunMeters: longestRun,
+                               longestRunWindowDays: longestRunWindowDays,
+                               fitnessTrend: fitnessTrend,
+                               observedDayCoverage: i.observedDayCoverage,
+                               historyWindowDays: i.historyWindowDays),
             baseConfidence: baseConfidence
         )
         let bodyEfficiency = bodyEfficiencyEngine.snapshot(profile: profile, bmi: i.bmi, confidence: baseConfidence)

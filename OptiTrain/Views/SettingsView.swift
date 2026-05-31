@@ -48,6 +48,18 @@ struct SettingsView: View {
                 }
             }
 
+            Section("Methodology") {
+                Link("Max HR (Tanaka 2001)", destination: URL(string: "https://doi.org/10.1016/S0735-1097(00)01054-8")!)
+                Link("VO₂max from HR ratio (Uth 2004)", destination: URL(string: "https://pubmed.ncbi.nlm.nih.gov/14624296/")!)
+                Link("TRIMP formula background", destination: URL(string: "https://pmc.ncbi.nlm.nih.gov/articles/PMC5673663/")!)
+                Link("EWMA ACWR sensitivity (Williams 2017)", destination: URL(string: "https://bjsm.bmj.com/content/51/9/749")!)
+                Link("ACWR coupling critique", destination: URL(string: "https://bjsm.bmj.com/content/53/15/921")!)
+                Link("HRV monitoring review (Plews 2013)", destination: URL(string: "https://pubmed.ncbi.nlm.nih.gov/23852425/")!)
+                Text("Where evidence is limited (for example heat adaptation without ambient temperature data), OptiTrain uses explicit placeholders and labels them in readiness assumptions.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("About") {
                 LabeledContent("App", value: "OptiTrain")
                 LabeledContent("Version", value: "0.3.0")

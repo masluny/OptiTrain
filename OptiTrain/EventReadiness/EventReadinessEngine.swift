@@ -19,6 +19,12 @@ struct EventReadinessEngine: Sendable {
         let strongestFactor: Factor?
         let collapseRiskPercent: Double          // 0-100, qualitative
         let completionProbability: Double        // 0-1
+        let trainingCoveragePercent: Double      // 0...100 of event distance covered by longest run
+        let longestRunMeters: Double
+        let referenceDate: Date?
+        let referenceDistanceMeters: Double?
+        let referenceAgeDays: Int?
+        let assumptions: [String]
         let explanation: Explanation
         let confidence: Confidence
     }
@@ -29,7 +35,10 @@ struct EventReadinessEngine: Sendable {
     struct PerformanceContext: Sendable {
         let reference: RaceTimePrediction.Reference?
         let longestRunMeters: Double
+        let longestRunWindowDays: Int
         let fitnessTrend: Double            // 0...1, 0.5 = flat, >0.5 = VO₂max/efficiency improving
+        let observedDayCoverage: Double     // 0...1 in recent loaded history
+        let historyWindowDays: Int
     }
 
     init() {}
@@ -48,11 +57,11 @@ struct EventReadinessEngine: Sendable {
         // Speed is gated by coverage so a fast 5K can't inflate a marathon you've
         // never trained for (the classic VO₂max over-prediction).
         let capabilityBlend = Self.capabilityScore(profile: profile, weights: w)
+        let coverage = Self.coverage(longestRunMeters: performance.longestRunMeters, eventMeters: event.equivalentRunMeters)
         let trainingFitness: Double
         if let ref = performance.reference {
             let vdot = RaceTimePrediction.vdot(distanceMeters: ref.distanceMeters, durationSeconds: ref.durationSeconds)
             let speed = Self.vdotReadiness(vdot) / 100.0
-            let coverage = Self.coverage(longestRunMeters: performance.longestRunMeters, eventMeters: event.equivalentRunMeters)
             let trend = max(0, min(1, performance.fitnessTrend))
             let base = 40 + 50 * coverage                               // 40 (untrained) → 90 (covered)
             let lift = (100 - base) * (0.6 * speed + 0.4 * trend) * coverage
@@ -160,6 +169,25 @@ struct EventReadinessEngine: Sendable {
 
         // Completion probability — a soft inverse of collapse + base.
         let completion = max(0.05, min(0.99, 0.50 + (raw - 50) / 80.0 - collapsePct / 200.0))
+        let referenceAgeDays = performance.reference.map {
+            max(0, Int(Date().timeIntervalSince($0.date) / 86_400.0))
+        }
+        var assumptions: [String] = [
+            "Calculated from recorded Apple Health workouts and physiology signals."
+        ]
+        if let age = referenceAgeDays, age > 180 {
+            assumptions.append("Best reference workout is \(age) days old, so confidence is reduced.")
+        }
+        if performance.observedDayCoverage < 0.70 {
+            let pct = Int((performance.observedDayCoverage * 100).rounded())
+            assumptions.append("Only \(pct)% of recent days had recorded signals in the \(performance.historyWindowDays)-day window.")
+        }
+        if coverage < 0.60 {
+            assumptions.append("Longest recorded run in the last \(performance.longestRunWindowDays) days is well below this event distance, which caps readiness.")
+        }
+        if performance.reference == nil {
+            assumptions.append("No qualifying run reference was found, so readiness leans more on physiology proxies.")
+        }
 
         let headline: String = {
             switch score {
@@ -184,6 +212,12 @@ struct EventReadinessEngine: Sendable {
             strongestFactor: strongest.map { Factor(label: $0.0, direction: .positive, magnitude: 1, detail: "Top contributor") },
             collapseRiskPercent: collapsePct,
             completionProbability: completion,
+            trainingCoveragePercent: coverage * 100,
+            longestRunMeters: performance.longestRunMeters,
+            referenceDate: performance.reference?.date,
+            referenceDistanceMeters: performance.reference?.distanceMeters,
+            referenceAgeDays: referenceAgeDays,
+            assumptions: assumptions,
             explanation: expl,
             confidence: baseConfidence
         )

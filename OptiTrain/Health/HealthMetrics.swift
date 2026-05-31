@@ -26,6 +26,21 @@ struct DailyMetrics: Equatable {
     let activeEnergyKcal: Double?
     let workoutLoad: Double?
 
+    /// True when at least one health/workout signal exists for this day.
+    /// Used to avoid treating fully missing watch days as confirmed "zero".
+    var hasAnySignal: Bool {
+        let hasSleep = (sleep?.asleepDuration ?? 0) > 0
+        let hasWorkout = (workoutLoad ?? 0) > 0
+        return hasSleep
+            || overnightHRV != nil
+            || restingHeartRate != nil
+            || wristTemperatureDelta != nil
+            || respiratoryRate != nil
+            || steps != nil
+            || activeEnergyKcal != nil
+            || hasWorkout
+    }
+
     /// Returns a copy with the sleep block swapped out. Used to carry the most
     /// recent recorded night forward into today when the watch wasn't worn to bed.
     func replacingSleep(_ newSleep: SleepMetrics?) -> DailyMetrics {

@@ -9,7 +9,7 @@ struct PhysiologyProfileBuilder: Sendable {
 
     struct Inputs {
         let history: [DailyMetrics]
-        let workouts: [WorkoutSummary]       // 90 days
+        let workouts: [WorkoutSummary]       // loaded workout history window
         let load: TrainingLoadEngine.Snapshot?
         let recoveryDebt: RecoveryDebtModel.Snapshot?
         let autonomic: AutonomicStability.Snapshot?

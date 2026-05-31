@@ -204,6 +204,7 @@ private struct EventCard: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(readiness.explanation.headline)
                         .font(.subheadline).foregroundStyle(.secondary)
+                    eventContext
 
                     // The three pillars behind the score — capability, taper,
                     // acute recovery — the way Garmin/WHOOP/Oura present it.
@@ -260,6 +261,37 @@ private struct EventCard: View {
         }
         .padding(16)
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private var eventContext: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            let longestKm = readiness.longestRunMeters / 1000.0
+            Text(String(format: "Longest recorded run: %.1f km · Coverage: %.0f%% of this event",
+                        longestKm, readiness.trainingCoveragePercent))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            if let refDate = readiness.referenceDate {
+                let refKm = (readiness.referenceDistanceMeters ?? 0) / 1000.0
+                let ageText = readiness.referenceAgeDays.map { "\($0)d ago" } ?? "recent"
+                Text(String(format: "Best reference: %.1f km on %@ (%@)",
+                            refKm,
+                            refDate.formatted(.dateTime.year().month().day()),
+                            ageText))
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+            } else {
+                Text("No qualifying run reference found in recorded data.")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+            if !readiness.assumptions.isEmpty {
+                ForEach(Array(readiness.assumptions.enumerated()), id: \.offset) { _, note in
+                    Text("• \(note)")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+        }
     }
 
     private func formatTime(_ seconds: Double) -> String {

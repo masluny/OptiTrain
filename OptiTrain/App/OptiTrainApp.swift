@@ -95,7 +95,7 @@ final class AppSession {
                     self.loadingStatus = "Loading daily metrics (\(completed)/35)…"
                 }
             }
-            async let workoutsTask: [WorkoutSummary] = (try? await health.workouts(in: .init(start: Calendar.current.date(byAdding: .day, value: -90, to: Date())!, end: Date()))) ?? []
+            async let workoutsTask: [WorkoutSummary] = (try? await health.workouts(in: .init(start: Calendar.current.date(byAdding: .day, value: -365, to: Date())!, end: Date()))) ?? []
             async let vo2Task: [VO2maxTrajectory.Sample] = (try? await health.vo2maxSamples(days: 180)) ?? []
             async let bodyCompTask = health.bodyComposition()
 
@@ -126,6 +126,7 @@ final class AppSession {
             progress = max(progress, 0.95)
 
             let sorted = all.sorted { $0.date < $1.date }
+            let observedCoverage = observedDayCoverage(in: sorted, workouts: workouts90)
             guard let resolved = resolveScoreDay(in: sorted) else {
                 state = .failed("No daily health data is available yet. Open Apple Health, allow permissions, then pull to refresh.")
                 return
@@ -152,7 +153,9 @@ final class AppSession {
                 sex: sex,
                 scoreDate: scoreDay.date,
                 usingPreviousDay: usingFallback,
-                useWristTemperature: UserSettings.current.useWristTemperature
+                useWristTemperature: UserSettings.current.useWristTemperature,
+                observedDayCoverage: observedCoverage,
+                historyWindowDays: sorted.count
             ))
             guard refreshGeneration == generation else { return }
 
@@ -169,7 +172,8 @@ final class AppSession {
             self.intelligence = snapshot
             self.dataQualityNotes = buildDataQualityNotes(scoreDay: scoreDay,
                                                           history: sorted,
-                                                          hasAnySleepData: resolved.hasAnySleepData)
+                                                          hasAnySleepData: resolved.hasAnySleepData,
+                                                          observedCoverage: observedCoverage)
             self.loadingStatus = "Up to date"
             self.progress = 1.0
             self.state = .ready
@@ -212,8 +216,12 @@ final class AppSession {
 
     private func buildDataQualityNotes(scoreDay: DailyMetrics,
                                        history: [DailyMetrics],
-                                       hasAnySleepData: Bool) -> [String] {
+                                       hasAnySleepData: Bool,
+                                       observedCoverage: Double) -> [String] {
         var notes: [String] = []
+        if observedCoverage < 0.70 {
+            notes.append("Only \(Int((observedCoverage * 100).rounded()))% of recent days had recorded signals. Missing-watch days are excluded where possible, and confidence is reduced.")
+        }
         if !hasAnySleepData {
             notes.append("No sleep data found in the loaded window, so sleep uses a neutral placeholder score. Check Apple Health sleep permissions and wear your watch overnight.")
         }
@@ -230,5 +238,15 @@ final class AppSession {
             notes.append("Wrist temperature is unavailable (unsupported watch or no data), so temperature weighting is neutralized.")
         }
         return notes
+    }
+
+    private func observedDayCoverage(in history: [DailyMetrics], workouts: [WorkoutSummary]) -> Double {
+        guard !history.isEmpty else { return 0 }
+        let calendar = Calendar.current
+        let workoutDays = Set(workouts.map { calendar.startOfDay(for: $0.start) })
+        let observed = history.filter { day in
+            day.hasAnySignal || workoutDays.contains(calendar.startOfDay(for: day.date))
+        }.count
+        return Double(observed) / Double(history.count)
     }
 }

@@ -201,10 +201,12 @@ struct RaceTimePrediction: Sendable {
         )
     }
 
-    /// Fractional weight: 1.0 today, 0.5 at 60 days old, 0.0 at 180+ days old.
+    /// Fractional weight: 1.0 today, 0.35 at 180+ days old.
+    /// We keep a floor so older benchmark efforts still inform predictions
+    /// (with reduced influence) instead of being silently discarded.
     private func recencyFactor(date: Date) -> Double {
         let days = Date().timeIntervalSince(date) / 86_400
-        return max(0, 1.0 - days / 180.0)
+        return max(0.35, 1.0 - days / 180.0)
     }
 
     private func recencyDecay(date: Date) -> Double {
