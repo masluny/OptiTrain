@@ -28,6 +28,11 @@ final class AppSession {
     /// queries complete so the user can tell the app is actually working and
     /// not stuck. Reset to 0 at the start of every refresh.
     var progress: Double = 0
+    /// Human-readable phase text shown next to the progress ring.
+    var loadingStatus: String = "Connecting to Apple Health…"
+    /// Data coverage notes shown in UI so users know exactly which inputs are
+    /// missing and why some scores/charts may be neutral.
+    var dataQualityNotes: [String] = []
     var todayReadiness: ReadinessScore?
     var plan: AdvisorPlan?
     var history: [DailyMetrics] = []
@@ -54,12 +59,15 @@ final class AppSession {
     private let health = HealthKitManager.shared
     private let advisor = ActivityAdvisor()
     private let pipeline = AdaptiveIntelligencePipeline()
+    private var refreshGeneration: UInt64 = 0
     private var calculator: ReadinessCalculator {
         ReadinessCalculator(useWristTemperature: UserSettings.current.useWristTemperature)
     }
 
+    @MainActor
     func bootstrap() async {
         state = .requestingAuth
+        loadingStatus = "Requesting Apple Health access…"
         do {
             try await health.requestAuthorization()
             await refresh()
@@ -68,35 +76,58 @@ final class AppSession {
         }
     }
 
+    @MainActor
     func refresh() async {
+        refreshGeneration &+= 1
+        let generation = refreshGeneration
+
         state = .loading
         progress = 0
+        loadingStatus = "Preparing refresh…"
+        dataQualityNotes = []
         do {
-            // Pull a wider history for the v1 engines. The 35-day daily-metrics
-            // loop is the dominant cost (it's sequential per day) so it owns
-            // the lion's share of the progress bar — 0 → 70%. The other three
-            // fetches run in parallel and are usually done by the time the
-            // daily loop finishes.
+            // Pull a wider history for the v1 engines. This is still the
+            // dominant cost, so we map most of the progress bar to this loop.
             async let allDaysTask = health.recentDailyMetrics(days: 35) { [weak self] completed in
                 Task { @MainActor [weak self] in
-                    self?.progress = min(0.70, Double(completed) / 35.0 * 0.70)
+                    guard let self, self.refreshGeneration == generation else { return }
+                    self.progress = min(0.72, Double(completed) / 35.0 * 0.72)
+                    self.loadingStatus = "Loading daily metrics (\(completed)/35)…"
                 }
             }
-            async let workoutsTask = health.workouts(in: .init(start: Calendar.current.date(byAdding: .day, value: -90, to: Date())!, end: Date()))
-            async let vo2Task = health.vo2maxSamples(days: 180)
+            async let workoutsTask: [WorkoutSummary] = (try? await health.workouts(in: .init(start: Calendar.current.date(byAdding: .day, value: -90, to: Date())!, end: Date()))) ?? []
+            async let vo2Task: [VO2maxTrajectory.Sample] = (try? await health.vo2maxSamples(days: 180)) ?? []
             async let bodyCompTask = health.bodyComposition()
 
-            let all = try await allDaysTask
-            let workouts90 = try await workoutsTask
-            let vo2Samples = try await vo2Task
+            let all = (try? await allDaysTask) ?? []
+            guard refreshGeneration == generation else { return }
+            loadingStatus = "Loading workouts…"
+            progress = max(progress, 0.78)
+
+            let workouts90 = await workoutsTask
+            guard refreshGeneration == generation else { return }
+            loadingStatus = "Loading VO₂max…"
+            progress = max(progress, 0.84)
+
+            let vo2Samples = await vo2Task
+            guard refreshGeneration == generation else { return }
+            loadingStatus = "Loading body composition…"
+            progress = max(progress, 0.88)
+
             let bodyComp = await bodyCompTask
+            guard refreshGeneration == generation else { return }
+            loadingStatus = "Loading demographics…"
+            progress = max(progress, 0.92)
+
             let age = health.ageInYears()
             let sex = health.biologicalSex()
-            progress = 0.85    // all HealthKit fetches done; pipeline next
+            guard refreshGeneration == generation else { return }
+            loadingStatus = "Computing readiness…"
+            progress = max(progress, 0.95)
 
             let sorted = all.sorted { $0.date < $1.date }
             guard let resolved = resolveScoreDay(in: sorted) else {
-                state = .failed("No sleep data in the last 30 days. Check Apple Health permissions in Settings → Diagnostics.")
+                state = .failed("No daily health data is available yet. Open Apple Health, allow permissions, then pull to refresh.")
                 return
             }
             let scoreDay = resolved.day
@@ -110,6 +141,7 @@ final class AppSession {
             let plan = advisor.plan(for: .init(readiness: score, recentWorkouts: weekWorkouts, consecutiveLowReadinessDays: lowStreak))
 
             // Run the Adaptive Intelligence pipeline.
+            loadingStatus = "Running intelligence pipeline…"
             let snapshot = pipeline.snapshot(.init(
                 today: scoreDay,
                 history: sorted,
@@ -122,6 +154,7 @@ final class AppSession {
                 usingPreviousDay: usingFallback,
                 useWristTemperature: UserSettings.current.useWristTemperature
             ))
+            guard refreshGeneration == generation else { return }
 
             self.history = sorted
             self.todayReadiness = score
@@ -134,9 +167,14 @@ final class AppSession {
             self.scoreDate = scoreDay.date
             self.sleepCarriedFrom = carriedSleepFrom
             self.intelligence = snapshot
+            self.dataQualityNotes = buildDataQualityNotes(scoreDay: scoreDay,
+                                                          history: sorted,
+                                                          hasAnySleepData: resolved.hasAnySleepData)
+            self.loadingStatus = "Up to date"
             self.progress = 1.0
             self.state = .ready
         } catch {
+            guard refreshGeneration == generation else { return }
             state = .failed(error.localizedDescription)
         }
     }
@@ -145,17 +183,18 @@ final class AppSession {
     /// came from. We always score the most recent day so the readiness is for
     /// *today*. If today has no sleep — you're up past midnight, or you didn't
     /// wear the watch to bed — carry the most recent recorded night forward into
-    /// today's metrics so you still get a score. Returns nil only when there is
-    /// no sleep anywhere in the window.
-    private func resolveScoreDay(in sorted: [DailyMetrics]) -> (day: DailyMetrics, sleepFrom: Date?)? {
+    /// today's metrics so you still get a score. Returns nil only when there are
+    /// no daily rows at all.
+    private func resolveScoreDay(in sorted: [DailyMetrics]) -> (day: DailyMetrics, sleepFrom: Date?, hasAnySleepData: Bool)? {
         guard let latest = sorted.last else { return nil }
         if (latest.sleep?.asleepDuration ?? 0) > 0 {
-            return (latest, nil)
+            return (latest, nil, true)
         }
         guard let lastSlept = sorted.reversed().first(where: { ($0.sleep?.asleepDuration ?? 0) > 0 }) else {
-            return nil
+            // Still score "today" with neutral sleep so the app remains usable.
+            return (latest, nil, false)
         }
-        return (latest.replacingSleep(lastSlept.sleep), lastSlept.date)
+        return (latest.replacingSleep(lastSlept.sleep), lastSlept.date, true)
     }
 
     private func consecutiveLowDays(in days: [DailyMetrics]) -> Int {
@@ -169,5 +208,27 @@ final class AppSession {
             if s.value < 55 { count += 1 } else { break }
         }
         return count
+    }
+
+    private func buildDataQualityNotes(scoreDay: DailyMetrics,
+                                       history: [DailyMetrics],
+                                       hasAnySleepData: Bool) -> [String] {
+        var notes: [String] = []
+        if !hasAnySleepData {
+            notes.append("No sleep data found in the loaded window, so sleep uses a neutral placeholder score. Check Apple Health sleep permissions and wear your watch overnight.")
+        }
+        if scoreDay.overnightHRV == nil && history.allSatisfy({ $0.overnightHRV == nil }) {
+            notes.append("HRV is unavailable, so readiness is computed without HRV trend context.")
+        }
+        if scoreDay.restingHeartRate == nil && history.allSatisfy({ $0.restingHeartRate == nil }) {
+            notes.append("Resting heart rate is unavailable, so autonomic baseline confidence is reduced.")
+        }
+        if scoreDay.respiratoryRate == nil && history.allSatisfy({ $0.respiratoryRate == nil }) {
+            notes.append("Respiratory rate is unavailable on this device/account, so respiratory trends are omitted.")
+        }
+        if scoreDay.wristTemperatureDelta == nil && history.allSatisfy({ $0.wristTemperatureDelta == nil }) {
+            notes.append("Wrist temperature is unavailable (unsupported watch or no data), so temperature weighting is neutralized.")
+        }
+        return notes
     }
 }

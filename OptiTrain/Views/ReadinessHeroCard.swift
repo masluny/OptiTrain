@@ -1,10 +1,8 @@
 import SwiftUI
 
-/// Training Readiness, styled after the Garmin watch gauge: a circular dial with a
-/// bottom gap, a red→cyan color ramp, thin ticks at the band boundaries, and a
-/// white marker riding the current value. The number is tinted to its band, with
-/// the band word set in italics underneath. Sits on the same translucent material
-/// as the rest of the cards so the app's ambient shine reads through it.
+/// Training Readiness card with a clean, native-feeling ring and center readout.
+/// The visual is intentionally minimal so it reads quickly and stays consistent
+/// with Apple's system card language.
 struct ReadinessHeroCard: View {
     let score: ReadinessScore
     @State private var showingInfo = false
@@ -12,17 +10,7 @@ struct ReadinessHeroCard: View {
     // Compact size — this card now lives side-by-side with the Athlete Level
     // card on the Today page, so the gauge is roughly 65% of its old size.
     private let gaugeSize: CGFloat = 108
-    private let lineWidth: CGFloat = 8
-    private let gap = 0.16                       // fraction of the circle left open at the bottom
-
-    private var sweep: Double { (1 - gap) * 360 }
-    private var pathRadius: CGFloat { (gaugeSize - lineWidth) / 2 }
-
-    /// Angle (degrees, clockwise from straight up) for a 0–100 value along the arc.
-    /// Value 0 sits just left of the bottom gap; value 100 just right of it.
-    private func angle(for value: Double) -> Double {
-        180 + gap * 180 + (value / 100) * sweep
-    }
+    private let lineWidth: CGFloat = 9
 
     var body: some View {
         Button { showingInfo = true } label: {
@@ -46,46 +34,18 @@ struct ReadinessHeroCard: View {
             }
             Spacer(minLength: 0)
             ZStack {
-                // Empty track behind the colored ring.
+                // Track
                 Circle()
-                    .trim(from: 0, to: 1 - gap)
-                    .stroke(Color.secondary.opacity(0.15),
-                            style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
-                    .rotationEffect(.degrees(90 + gap * 180))
+                    .stroke(Color.secondary.opacity(0.18), lineWidth: lineWidth)
 
-                // The readiness ramp: low = red, high = cyan. Angles are set in the
-                // un-rotated frame so the gradient stays glued to the trim after we
-                // rotate the whole stroke into place.
+                // Value ring
                 Circle()
-                    .trim(from: 0, to: 1 - gap)
+                    .trim(from: 0, to: max(0.02, CGFloat(score.value) / 100.0))
                     .stroke(
-                        AngularGradient(
-                            gradient: Gradient(colors: [.red, .orange, .yellow, .green, .mint, .cyan]),
-                            center: .center,
-                            startAngle: .degrees(0),
-                            endAngle: .degrees(sweep)
-                        ),
+                        bandColor,
                         style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                     )
-                    .rotationEffect(.degrees(90 + gap * 180))
-
-                // Band-boundary notches (depleted|low|moderate|ready|prime).
-                ForEach([40, 55, 70, 85], id: \.self) { boundary in
-                    Capsule()
-                        .fill(Color.black)
-                        .frame(width: 2, height: lineWidth)
-                        .offset(y: -pathRadius)
-                        .rotationEffect(.degrees(angle(for: Double(boundary))))
-                }
-
-                // White marker riding the current value.
-                Circle()
-                    .fill(.white)
-                    .frame(width: lineWidth - 3, height: lineWidth - 3)
-                    .overlay(Circle().stroke(.black, lineWidth: 2))
-                    .shadow(color: .black.opacity(0.4), radius: 1.5)
-                    .offset(y: -pathRadius)
-                    .rotationEffect(.degrees(angle(for: Double(score.value))))
+                    .rotationEffect(.degrees(-90))
                     .animation(.easeOut(duration: 0.6), value: score.value)
 
                 // Center readout — just the number and the band, since the

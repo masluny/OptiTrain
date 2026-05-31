@@ -19,30 +19,15 @@ struct RootView: View {
     }
 }
 
-/// A slight, ambient three-color shine: light blue, neon green and bright orange
-/// bleeding in from different corners. Applied per-screen via `.shineBackground()`
-/// (a single root-level layer gets painted over by `TabView`), so it sits behind
-/// each screen's transparent `ScrollView` and tints the translucent card
-/// materials. The base stays clear, so it works in both light and dark mode.
+/// Subtle grouped-system background to keep the UI close to native iOS surfaces.
 struct ShineBackground: View {
     var body: some View {
-        ZStack {
-            // A faint base wash so the shine reads even on pure white/black.
-            RadialGradient(colors: [Color(red: 0.40, green: 0.75, blue: 1.00).opacity(0.20), .clear],
-                           center: .topLeading, startRadius: 0, endRadius: 460)
-            RadialGradient(colors: [Color(red: 1.00, green: 0.55, blue: 0.15).opacity(0.16), .clear],
-                           center: UnitPoint(x: 0.95, y: 0.10), startRadius: 0, endRadius: 400)
-            RadialGradient(colors: [Color(red: 0.30, green: 1.00, blue: 0.55).opacity(0.17), .clear],
-                           center: .bottomTrailing, startRadius: 0, endRadius: 520)
-        }
-        .blur(radius: 28)
+        Color(uiColor: .systemGroupedBackground)
     }
 }
 
 extension View {
-    /// Places the ambient shine behind a screen's content. The screen's own
-    /// `ScrollView` is transparent, so the shine shows through and bleeds under
-    /// the navigation bar.
+    /// Places a native grouped background behind each screen.
     func shineBackground() -> some View {
         background(ShineBackground().ignoresSafeArea())
     }

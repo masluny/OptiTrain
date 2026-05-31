@@ -14,10 +14,10 @@ struct EventReadinessView: View {
                 switch session.state {
                 case .idle, .requestingAuth:
                     LoadingProgressView(progress: 0,
-                                        label: "Connecting to Apple Health…")
+                                        label: session.loadingStatus)
                 case .loading:
                     LoadingProgressView(progress: session.progress,
-                                        label: "Computing event readiness…")
+                                        label: session.loadingStatus)
                 case .failed(let message):
                     ErrorBanner(message: message) {
                         Task { await session.bootstrap() }
@@ -32,12 +32,13 @@ struct EventReadinessView: View {
                         }
                     } else {
                         LoadingProgressView(progress: session.progress,
-                                            label: "Computing event readiness…")
+                                            label: session.loadingStatus)
                     }
                 }
             }
             .padding(.horizontal)
             .padding(.bottom, 32)
+            .animation(.snappy(duration: 0.25), value: filter)
         }
         .scrollIndicators(.hidden)
         .navigationTitle("Race Readiness")
@@ -50,44 +51,41 @@ struct EventReadinessView: View {
 }
 
 private struct CategoryFilterBar: View {
+    private enum FilterOption: Hashable {
+        case all
+        case category(RaceTimePrediction.RaceDistance.Category)
+    }
+
     @Binding var selected: RaceTimePrediction.RaceDistance.Category?
 
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                FilterChip(title: "All", systemImage: "square.grid.2x2", isOn: selected == nil) {
-                    selected = nil
-                }
-                ForEach(RaceTimePrediction.RaceDistance.Category.allCases, id: \.self) { category in
-                    FilterChip(title: category.rawValue, systemImage: category.symbol, isOn: selected == category) {
-                        selected = selected == category ? nil : category
-                    }
+    private var binding: Binding<FilterOption> {
+        Binding(
+            get: { selected.map(FilterOption.category) ?? .all },
+            set: { newValue in
+                switch newValue {
+                case .all: selected = nil
+                case .category(let category): selected = category
                 }
             }
-            .padding(.horizontal, 2)
-        }
+        )
     }
-}
-
-private struct FilterChip: View {
-    let title: String
-    let systemImage: String
-    let isOn: Bool
-    let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            Label(title, systemImage: systemImage)
-                .font(.subheadline.weight(.medium))
-                .padding(.horizontal, 13)
-                .padding(.vertical, 7)
-                .background(
-                    isOn ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color.secondary.opacity(0.12)),
-                    in: Capsule()
-                )
-                .foregroundStyle(isOn ? Color.white : Color.primary)
+        HStack {
+            Label("Event type", systemImage: "line.3.horizontal.decrease.circle")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Picker("Event type", selection: binding) {
+                Text("All").tag(FilterOption.all)
+                ForEach(RaceTimePrediction.RaceDistance.Category.allCases, id: \.self) { category in
+                    Text(category.rawValue).tag(FilterOption.category(category))
+                }
+            }
+            .pickerStyle(.menu)
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal, 2)
+        .accessibilityHint("Filters race readiness cards by event type")
     }
 }
 
@@ -364,11 +362,11 @@ struct ReadinessRing: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color.secondary.opacity(0.15), lineWidth: lineWidth)
+                .stroke(Color.secondary.opacity(0.18), lineWidth: lineWidth)
             Circle()
                 .trim(from: 0, to: CGFloat(clamped) / 100.0)
                 .stroke(
-                    LinearGradient(colors: ringColors, startPoint: .topLeading, endPoint: .bottomTrailing),
+                    ringColor,
                     style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
@@ -381,13 +379,13 @@ struct ReadinessRing: View {
         .frame(width: size, height: size)
     }
 
-    private var ringColors: [Color] {
+    private var ringColor: Color {
         switch clamped {
-        case 85...: [.green, .mint]
-        case 70..<85: [.mint, .teal]
-        case 55..<70: [.yellow, .green]
-        case 40..<55: [.orange, .yellow]
-        default: [.red, .orange]
+        case 85...: .green
+        case 70..<85: .mint
+        case 55..<70: .yellow
+        case 40..<55: .orange
+        default: .red
         }
     }
 }

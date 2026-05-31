@@ -10,15 +10,18 @@ struct TodayView: View {
                 switch session.state {
                 case .idle, .requestingAuth:
                     LoadingProgressView(progress: 0,
-                                        label: "Connecting to Apple Health…")
+                                        label: session.loadingStatus)
                 case .loading:
                     LoadingProgressView(progress: session.progress,
-                                        label: "Crunching your numbers…")
+                                        label: session.loadingStatus)
                 case .failed(let message):
                     ErrorBanner(message: message) {
                         Task { await session.bootstrap() }
                     }
                 case .ready:
+                    if !session.dataQualityNotes.isEmpty {
+                        DataQualityBanner(notes: session.dataQualityNotes)
+                    }
                     if session.showingPreviousDay, let date = session.sleepCarriedFrom {
                         StaleDayBanner(date: date)
                     }
@@ -57,6 +60,25 @@ struct TodayView: View {
         .scrollIndicators(.hidden)
         .navigationTitle("OptiTrain")
         .refreshable { await session.refresh() }
+    }
+}
+
+private struct DataQualityBanner: View {
+    let notes: [String]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Some health inputs are missing", systemImage: "info.circle.fill")
+                .font(.subheadline.weight(.semibold))
+            ForEach(Array(notes.enumerated()), id: \.offset) { _, note in
+                Text("• \(note)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
     }
 }
 

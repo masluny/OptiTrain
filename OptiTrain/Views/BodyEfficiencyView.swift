@@ -86,7 +86,7 @@ struct BodyEfficiencyCard: View {
                     .foregroundStyle(.tertiary)
             }
             HStack(alignment: .top, spacing: 10) {
-                BodyEfficiencyFigure(systems: snapshot.systems, overallScore: snapshot.score, glowRadius: 8)
+                BodyEfficiencyFigure(systems: snapshot.systems, overallScore: snapshot.score, glow: false)
                     .frame(width: 44, height: 104)
                 // Score stacked vertically — big number on top, tiny "/ 10"
                 // below — so an inline HStack can never wrap a side-by-side

@@ -52,33 +52,39 @@ final class HealthKitManager {
 
     // MARK: - Daily snapshot
 
-    func dailyMetrics(for date: Date, calendar: Calendar = .current) async throws -> DailyMetrics {
+    func dailyMetrics(for date: Date,
+                      calendar: Calendar = .current,
+                      precomputedWorkoutLoad: Double? = nil) async throws -> DailyMetrics {
         let dayStart = calendar.startOfDay(for: date)
         let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart)!
         // Wide sleep window: yesterday noon → today 2pm. Catches late bedtimes, late wake-ups, and naps.
         let sleepWindowStart = calendar.date(byAdding: .hour, value: -12, to: dayStart)!
         let sleepWindowEnd = dayStart.addingTimeInterval(14 * 3600)
 
-        async let sleep = sleepMetrics(start: sleepWindowStart, end: sleepWindowEnd)
-        async let hrv = overnightHRV(start: sleepWindowStart, end: sleepWindowEnd)
-        async let rhr = latestQuantity(.restingHeartRate, unit: HKUnit(from: "count/min"), in: DateInterval(start: calendar.date(byAdding: .day, value: -1, to: dayEnd)!, end: dayEnd))
-        async let temp = wristTemperatureDelta(on: date, calendar: calendar)
-        async let resp = latestQuantity(.respiratoryRate, unit: HKUnit(from: "count/min"), in: DateInterval(start: sleepWindowStart, end: dayEnd))
-        async let steps = sum(.stepCount, unit: .count(), in: DateInterval(start: dayStart, end: dayEnd))
-        async let kcal = sum(.activeEnergyBurned, unit: .kilocalorie(), in: DateInterval(start: dayStart, end: dayEnd))
-        async let workouts = workouts(in: DateInterval(start: dayStart, end: dayEnd))
-
-        let workoutLoad = try await workouts.reduce(0.0) { $0 + load(for: $1) }
+        async let sleep = tolerant { try await sleepMetrics(start: sleepWindowStart, end: sleepWindowEnd) }
+        async let hrv = tolerant { try await overnightHRV(start: sleepWindowStart, end: sleepWindowEnd) }
+        async let rhr = tolerant { try await latestQuantity(.restingHeartRate, unit: HKUnit(from: "count/min"), in: DateInterval(start: calendar.date(byAdding: .day, value: -1, to: dayEnd)!, end: dayEnd)) }
+        async let temp = tolerant { try await wristTemperatureDelta(on: date, calendar: calendar) }
+        async let resp = tolerant { try await latestQuantity(.respiratoryRate, unit: HKUnit(from: "count/min"), in: DateInterval(start: sleepWindowStart, end: dayEnd)) }
+        async let steps = tolerant { try await sum(.stepCount, unit: .count(), in: DateInterval(start: dayStart, end: dayEnd)) }
+        async let kcal = tolerant { try await sum(.activeEnergyBurned, unit: .kilocalorie(), in: DateInterval(start: dayStart, end: dayEnd)) }
+        let workoutLoad: Double
+        if let precomputedWorkoutLoad {
+            workoutLoad = precomputedWorkoutLoad
+        } else {
+            let dayWorkouts = (try? await workouts(in: DateInterval(start: dayStart, end: dayEnd))) ?? []
+            workoutLoad = dayWorkouts.reduce(0.0) { $0 + load(for: $1) }
+        }
 
         return DailyMetrics(
             date: dayStart,
-            sleep: try await sleep,
-            overnightHRV: try await hrv,
-            restingHeartRate: try await rhr,
-            wristTemperatureDelta: try await temp,
-            respiratoryRate: try await resp,
-            steps: try await steps.map { Int($0) },
-            activeEnergyKcal: try await kcal,
+            sleep: await sleep,
+            overnightHRV: await hrv,
+            restingHeartRate: await rhr,
+            wristTemperatureDelta: await temp,
+            respiratoryRate: await resp,
+            steps: await steps.map { Int($0) },
+            activeEnergyKcal: await kcal,
             workoutLoad: workoutLoad
         )
     }
@@ -86,16 +92,66 @@ final class HealthKitManager {
     func recentDailyMetrics(days: Int,
                             onDayComplete: (@Sendable (Int) -> Void)? = nil) async throws -> [DailyMetrics] {
         let calendar = Calendar.current
-        var results: [DailyMetrics] = []
-        for offset in 0..<days {
-            let day = calendar.date(byAdding: .day, value: -offset, to: Date())!
-            results.append(try await dailyMetrics(for: day, calendar: calendar))
-            // Called with the count of completed days (1-based) so the caller
-            // can drive a real loading-progress ring. This loop is the cold
-            // start's dominant cost, so it owns most of the bar.
-            onDayComplete?(offset + 1)
+        guard days > 0 else { return [] }
+
+        // Pull all workouts for the window once, then reuse a per-day load map.
+        // This avoids N extra workout queries (one per day) during cold start.
+        let today = calendar.startOfDay(for: Date())
+        let start = calendar.date(byAdding: .day, value: -(days - 1), to: today)!
+        let end = calendar.date(byAdding: .day, value: 1, to: today)!
+        let workoutsWindow = DateInterval(start: start, end: end)
+        let allWorkouts = (try? await workouts(in: workoutsWindow)) ?? []
+        let loadByDay: [Date: Double] = allWorkouts.reduce(into: [:]) { partial, workout in
+            let dayKey = calendar.startOfDay(for: workout.start)
+            partial[dayKey, default: 0] += load(for: workout)
         }
-        return results.reversed()
+
+        // Bound day-level parallelism so refresh stays responsive and doesn't
+        // flood HealthKit with too many simultaneous sample queries.
+        let maxConcurrentDays = 3
+        var ordered: [DailyMetrics?] = Array(repeating: nil, count: days)
+        var nextOffset = 0
+        var completed = 0
+
+        try await withThrowingTaskGroup(of: (Int, DailyMetrics).self) { group in
+            while nextOffset < min(maxConcurrentDays, days) {
+                let offset = nextOffset
+                let day = calendar.date(byAdding: .day, value: -offset, to: today)!
+                let dayKey = calendar.startOfDay(for: day)
+                let cachedLoad = loadByDay[dayKey] ?? 0
+                group.addTask { [self] in
+                    try Task.checkCancellation()
+                    let metrics = try await dailyMetrics(for: day,
+                                                         calendar: calendar,
+                                                         precomputedWorkoutLoad: cachedLoad)
+                    return (offset, metrics)
+                }
+                nextOffset += 1
+            }
+
+            while let (offset, metrics) = try await group.next() {
+                ordered[offset] = metrics
+                completed += 1
+                onDayComplete?(completed)
+
+                if nextOffset < days {
+                    let scheduledOffset = nextOffset
+                    let day = calendar.date(byAdding: .day, value: -scheduledOffset, to: today)!
+                    let dayKey = calendar.startOfDay(for: day)
+                    let cachedLoad = loadByDay[dayKey] ?? 0
+                    group.addTask { [self] in
+                        try Task.checkCancellation()
+                        let metrics = try await dailyMetrics(for: day,
+                                                             calendar: calendar,
+                                                             precomputedWorkoutLoad: cachedLoad)
+                        return (scheduledOffset, metrics)
+                    }
+                    nextOffset += 1
+                }
+            }
+        }
+
+        return ordered.compactMap { $0 }.reversed()
     }
 
     // MARK: - Sleep
@@ -219,7 +275,10 @@ final class HealthKitManager {
         let predicate = HKQuery.predicateForSamples(withStart: interval.start, end: interval.end)
         let sample: HKQuantitySample? = try await withCheckedThrowingContinuation { cont in
             let q = HKSampleQuery(sampleType: type, predicate: predicate, limit: 1, sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]) { _, samples, error in
-                if let error { cont.resume(throwing: error); return }
+                if let error {
+                    if Self.isNoData(error) { cont.resume(returning: nil); return }
+                    cont.resume(throwing: error); return
+                }
                 cont.resume(returning: (samples as? [HKQuantitySample])?.first)
             }
             store.execute(q)
@@ -357,6 +416,16 @@ final class HealthKitManager {
     }
 
     // MARK: - Diagnostics
+
+    /// Swallow per-metric query errors and return nil so one unavailable
+    /// metric doesn't abort the entire day snapshot.
+    private func tolerant<T>(_ operation: () async throws -> T?) async -> T? {
+        do {
+            return try await operation()
+        } catch {
+            return nil
+        }
+    }
 
     struct DiagnosticReport: Equatable {
         struct TypeStatus: Identifiable, Equatable {

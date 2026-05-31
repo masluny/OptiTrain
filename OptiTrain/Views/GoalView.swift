@@ -22,10 +22,10 @@ struct GoalView: View {
                     switch session.state {
                     case .idle, .requestingAuth:
                         LoadingProgressView(progress: 0,
-                                            label: "Connecting to Apple Health…")
+                                            label: session.loadingStatus)
                     case .loading:
                         LoadingProgressView(progress: session.progress,
-                                            label: "Reading your data…")
+                                            label: session.loadingStatus)
                     case .failed(let message):
                         ErrorBanner(message: message) {
                             Task { await session.bootstrap() }
@@ -42,7 +42,7 @@ struct GoalView: View {
                             GoalCoachCard(goal: goal, readiness: score, snapshot: snap)
                         } else {
                             LoadingProgressView(progress: session.progress,
-                                                label: "Reading your data…")
+                                                label: session.loadingStatus)
                         }
                     }
                 } else {
