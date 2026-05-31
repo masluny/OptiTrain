@@ -24,6 +24,10 @@ final class AppSession {
     }
 
     var state: LoadState = .idle
+    /// 0.0 → 1.0 fill for the loading ring. Climbs in real time as HealthKit
+    /// queries complete so the user can tell the app is actually working and
+    /// not stuck. Reset to 0 at the start of every refresh.
+    var progress: Double = 0
     var todayReadiness: ReadinessScore?
     var plan: AdvisorPlan?
     var history: [DailyMetrics] = []
@@ -66,9 +70,18 @@ final class AppSession {
 
     func refresh() async {
         state = .loading
+        progress = 0
         do {
-            // Pull a wider history for the v1 engines.
-            async let allDaysTask = health.recentDailyMetrics(days: 35)
+            // Pull a wider history for the v1 engines. The 35-day daily-metrics
+            // loop is the dominant cost (it's sequential per day) so it owns
+            // the lion's share of the progress bar — 0 → 70%. The other three
+            // fetches run in parallel and are usually done by the time the
+            // daily loop finishes.
+            async let allDaysTask = health.recentDailyMetrics(days: 35) { [weak self] completed in
+                Task { @MainActor [weak self] in
+                    self?.progress = min(0.70, Double(completed) / 35.0 * 0.70)
+                }
+            }
             async let workoutsTask = health.workouts(in: .init(start: Calendar.current.date(byAdding: .day, value: -90, to: Date())!, end: Date()))
             async let vo2Task = health.vo2maxSamples(days: 180)
             async let bodyCompTask = health.bodyComposition()
@@ -79,6 +92,7 @@ final class AppSession {
             let bodyComp = await bodyCompTask
             let age = health.ageInYears()
             let sex = health.biologicalSex()
+            progress = 0.85    // all HealthKit fetches done; pipeline next
 
             let sorted = all.sorted { $0.date < $1.date }
             guard let resolved = resolveScoreDay(in: sorted) else {
@@ -120,6 +134,7 @@ final class AppSession {
             self.scoreDate = scoreDay.date
             self.sleepCarriedFrom = carriedSleepFrom
             self.intelligence = snapshot
+            self.progress = 1.0
             self.state = .ready
         } catch {
             state = .failed(error.localizedDescription)

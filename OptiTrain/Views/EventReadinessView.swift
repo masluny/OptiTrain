@@ -7,15 +7,33 @@ struct EventReadinessView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                if let snap = session.intelligence {
-                    PhysiologyDisclosure(profile: snap.physiologyProfile)
-                    CategoryFilterBar(selected: $filter)
-                    ForEach(filtered(snap.eventReadiness)) { r in
-                        let prediction = snap.racePredictions.first(where: { $0.distance == r.event })
-                        EventCard(readiness: r, prediction: prediction)
+                // Look at session.state, not just intelligence — the old version
+                // showed a forever-spinner whenever the snapshot was nil for any
+                // reason (including `.failed`), which is what made the Races tab
+                // feel "stuck" for new users with no HealthKit data.
+                switch session.state {
+                case .idle, .requestingAuth:
+                    LoadingProgressView(progress: 0,
+                                        label: "Connecting to Apple Health…")
+                case .loading:
+                    LoadingProgressView(progress: session.progress,
+                                        label: "Computing event readiness…")
+                case .failed(let message):
+                    ErrorBanner(message: message) {
+                        Task { await session.bootstrap() }
                     }
-                } else {
-                    ProgressView("Computing event readiness…").padding(.top, 60)
+                case .ready:
+                    if let snap = session.intelligence {
+                        PhysiologyDisclosure(profile: snap.physiologyProfile)
+                        CategoryFilterBar(selected: $filter)
+                        ForEach(filtered(snap.eventReadiness)) { r in
+                            let prediction = snap.racePredictions.first(where: { $0.distance == r.event })
+                            EventCard(readiness: r, prediction: prediction)
+                        }
+                    } else {
+                        LoadingProgressView(progress: session.progress,
+                                            label: "Computing event readiness…")
+                    }
                 }
             }
             .padding(.horizontal)

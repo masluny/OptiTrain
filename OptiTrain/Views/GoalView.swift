@@ -16,18 +16,34 @@ struct GoalView: View {
                 if let goal {
                     GoalHeaderCard(goal: goal) { showingPicker = true }
 
-                    if let score = session.todayReadiness, let snap = session.intelligence {
-                        if case .race(let distance) = goal,
-                           let r = snap.eventReadiness.first(where: { $0.event == distance }) {
-                            GoalRaceStatusCard(
-                                readiness: r,
-                                prediction: snap.racePredictions.first(where: { $0.distance == distance })
-                            )
+                    // State-aware below the header — same pattern as Today /
+                    // Races / Trends, so a failed refresh shows a real error
+                    // instead of a forever-spinner.
+                    switch session.state {
+                    case .idle, .requestingAuth:
+                        LoadingProgressView(progress: 0,
+                                            label: "Connecting to Apple Health…")
+                    case .loading:
+                        LoadingProgressView(progress: session.progress,
+                                            label: "Reading your data…")
+                    case .failed(let message):
+                        ErrorBanner(message: message) {
+                            Task { await session.bootstrap() }
                         }
-
-                        GoalCoachCard(goal: goal, readiness: score, snapshot: snap)
-                    } else {
-                        ProgressView("Reading your data…").padding(.top, 40)
+                    case .ready:
+                        if let score = session.todayReadiness, let snap = session.intelligence {
+                            if case .race(let distance) = goal,
+                               let r = snap.eventReadiness.first(where: { $0.event == distance }) {
+                                GoalRaceStatusCard(
+                                    readiness: r,
+                                    prediction: snap.racePredictions.first(where: { $0.distance == distance })
+                                )
+                            }
+                            GoalCoachCard(goal: goal, readiness: score, snapshot: snap)
+                        } else {
+                            LoadingProgressView(progress: session.progress,
+                                                label: "Reading your data…")
+                        }
                     }
                 } else {
                     GoalEmptyState { showingPicker = true }

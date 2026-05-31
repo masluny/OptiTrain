@@ -31,12 +31,24 @@ struct TrendsView: View {
             VStack(alignment: .leading, spacing: 18) {
                 filterBar
 
-                if session.history.isEmpty {
-                    ContentUnavailableView("No history yet",
-                                           systemImage: "chart.line.uptrend.xyaxis",
-                                           description: Text("Charts appear once Apple Health has a few days of data."))
-                        .padding(.top, 60)
-                } else {
+                switch session.state {
+                case .idle, .requestingAuth:
+                    LoadingProgressView(progress: 0,
+                                        label: "Connecting to Apple Health…")
+                case .loading:
+                    LoadingProgressView(progress: session.progress,
+                                        label: "Loading trends…")
+                case .failed(let message):
+                    ErrorBanner(message: message) {
+                        Task { await session.bootstrap() }
+                    }
+                case .ready:
+                    if session.history.isEmpty {
+                        ContentUnavailableView("No history yet",
+                                               systemImage: "chart.line.uptrend.xyaxis",
+                                               description: Text("Charts appear once Apple Health has a few days of data."))
+                            .padding(.top, 60)
+                    } else {
                     Text("Last \(session.history.count) days")
                         .font(.caption).foregroundStyle(.secondary)
 
@@ -67,6 +79,7 @@ struct TrendsView: View {
                         stepsChart
                     }
                 }
+                }   // close the `switch session.state`
             }
             .padding()
         }
