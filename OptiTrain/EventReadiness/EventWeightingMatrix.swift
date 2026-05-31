@@ -147,6 +147,18 @@ enum EventWeightingMatrix {
                            recoveryResilience: 0.05, sleepConsistency: 0.04,
                            volumeTolerance: 0.06, fatigueResistance: 0.07,
                            specificity: 0.15, freshness: 0.03)
+        case .tennisMatch:
+            return Weights(vo2max: 0.12, threshold: 0.16, anaerobic: 0.20,
+                           durability: 0.05, fueling: 0.02, heat: 0.03,
+                           recoveryResilience: 0.09, sleepConsistency: 0.08,
+                           volumeTolerance: 0.06, fatigueResistance: 0.08,
+                           specificity: 0.08, freshness: 0.03)
+        case .boulderingSession:
+            return Weights(vo2max: 0.06, threshold: 0.08, anaerobic: 0.26,
+                           durability: 0.04, fueling: 0.02, heat: 0.02,
+                           recoveryResilience: 0.14, sleepConsistency: 0.10,
+                           volumeTolerance: 0.10, fatigueResistance: 0.08,
+                           specificity: 0.08, freshness: 0.02)
         }
     }
 }

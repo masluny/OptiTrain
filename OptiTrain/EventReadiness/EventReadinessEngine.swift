@@ -190,12 +190,18 @@ struct EventReadinessEngine: Sendable {
         }
 
         let headline: String = {
-            switch score {
-            case 85...: "\(event.rawValue) — A-race ready."
-            case 70...: "\(event.rawValue) — race-fit, fine-tune."
+            let noun: String = {
+                switch event {
+                case .tennisMatch, .boulderingSession: return "session"
+                default: return "race"
+                }
+            }()
+            return switch score {
+            case 85...: "\(event.rawValue) — A-\(noun) ready."
+            case 70...: "\(event.rawValue) — \(noun)-fit, fine-tune."
             case 55...: "\(event.rawValue) — capable, with caveats."
-            case 40...: "\(event.rawValue) — finishable, far from optimal."
-            default:    "\(event.rawValue) — would not recommend racing."
+            case 40...: "\(event.rawValue) — manageable, far from optimal."
+            default:    "\(event.rawValue) — keep this \(noun) easy today."
             }
         }()
 
@@ -263,6 +269,7 @@ struct EventReadinessEngine: Sendable {
         case .duathlon, .biathlon: return 0.45
         case .triathlon:           return 0.35
         case .cycling:             return 0.20
+        case .racket, .climbing:   return 0.15
         }
     }
 

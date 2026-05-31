@@ -88,7 +88,9 @@ struct AdaptiveIntelligencePipeline {
             .max() ?? 0
         let predictions: [RaceTimePrediction.Prediction] = {
             guard let ref = bestRef else { return [] }
-            return RaceTimePrediction.RaceDistance.allCases.map {
+            return RaceTimePrediction.RaceDistance.allCases
+                .filter(\.supportsTimePrediction)
+                .map {
                 racePrediction.predict($0, from: ref, longestRecentRunMeters: longestRun)
             }
         }()

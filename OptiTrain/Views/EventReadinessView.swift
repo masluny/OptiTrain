@@ -323,6 +323,8 @@ private struct DisciplineTag: View {
         case .swim: .cyan
         case .bike: .green
         case .run: .orange
+        case .racket: .red
+        case .climb: .brown
         }
     }
 }

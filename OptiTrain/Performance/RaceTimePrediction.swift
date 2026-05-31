@@ -33,6 +33,9 @@ struct RaceTimePrediction: Sendable {
         // Biathlon (swim → run)
         case sprintBiathlon = "Sprint Biathlon"
         case standardBiathlon = "Standard Biathlon"
+        // Skill sports (session readiness)
+        case tennisMatch = "Tennis Match"
+        case boulderingSession = "Bouldering Session"
 
         /// Sport family used to group and filter events in the UI.
         enum Category: String, CaseIterable, Sendable {
@@ -41,6 +44,8 @@ struct RaceTimePrediction: Sendable {
             case triathlon = "Triathlon"
             case duathlon = "Duathlon"
             case biathlon = "Biathlon"
+            case racket = "Racket"
+            case climbing = "Climbing"
 
             var symbol: String {
                 switch self {
@@ -49,6 +54,8 @@ struct RaceTimePrediction: Sendable {
                 case .triathlon: "figure.pool.swim"
                 case .duathlon: "bicycle"
                 case .biathlon: "drop.fill"
+                case .racket: "tennis.racket"
+                case .climbing: "figure.climbing"
                 }
             }
         }
@@ -60,6 +67,8 @@ struct RaceTimePrediction: Sendable {
             case .sprintTri, .olympicTri, .seventyThree, .ironman: .triathlon
             case .sprintDuathlon, .standardDuathlon: .duathlon
             case .sprintBiathlon, .standardBiathlon: .biathlon
+            case .tennisMatch: .racket
+            case .boulderingSession: .climbing
             }
         }
 
@@ -85,17 +94,30 @@ struct RaceTimePrediction: Sendable {
             case .standardDuathlon: 55_000     // 10 run + 40 bike + 5 run
             case .sprintBiathlon: 5_750        // 0.75 swim + 5 run
             case .standardBiathlon: 11_500     // 1.5 swim + 10 run
+            // Session-equivalent aerobic demand proxies (not race distances).
+            case .tennisMatch: 8_000
+            case .boulderingSession: 4_500
+            }
+        }
+
+        /// Only distance-endurance events get a Riegel time prediction.
+        var supportsTimePrediction: Bool {
+            switch self {
+            case .tennisMatch, .boulderingSession: false
+            default: true
             }
         }
 
         /// The sports that make up this event, in race order.
         enum Discipline: String, CaseIterable, Sendable {
-            case swim, bike, run
+            case swim, bike, run, racket, climb
             var label: String {
                 switch self {
                 case .swim: "Swim"
                 case .bike: "Bike"
                 case .run: "Run"
+                case .racket: "Racket"
+                case .climb: "Climb"
                 }
             }
             var symbol: String {
@@ -103,6 +125,8 @@ struct RaceTimePrediction: Sendable {
                 case .swim: "figure.pool.swim"
                 case .bike: "figure.outdoor.cycle"
                 case .run: "figure.run"
+                case .racket: "tennis.racket"
+                case .climb: "figure.climbing"
                 }
             }
         }
@@ -114,6 +138,8 @@ struct RaceTimePrediction: Sendable {
             case .sprintTri, .olympicTri, .seventyThree, .ironman: [.swim, .bike, .run]
             case .sprintDuathlon, .standardDuathlon: [.run, .bike]
             case .sprintBiathlon, .standardBiathlon: [.swim, .run]
+            case .tennisMatch: [.racket]
+            case .boulderingSession: [.climb]
             }
         }
     }

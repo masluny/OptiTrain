@@ -38,7 +38,7 @@ enum Goal: RawRepresentable, Hashable, Identifiable, Sendable {
     /// Short display title.
     var title: String {
         switch self {
-        case .race(let d):    "\(d.rawValue) race"
+        case .race(let d):    d.supportsTimePrediction ? "\(d.rawValue) race" : "\(d.rawValue) goal"
         case .generic(let g): g.title
         }
     }
@@ -54,7 +54,10 @@ enum Goal: RawRepresentable, Hashable, Identifiable, Sendable {
     /// One-line description of what success looks like.
     var subtitle: String {
         switch self {
-        case .race(let d):    "Be ready to perform at \(d.rawValue)."
+        case .race(let d):
+            d.supportsTimePrediction
+                ? "Be ready to perform at \(d.rawValue)."
+                : "Be ready for your next \(d.rawValue.lowercased())."
         case .generic(let g): g.subtitle
         }
     }
