@@ -9,11 +9,13 @@ struct TodayView: View {
             VStack(spacing: 20) {
                 switch session.state {
                 case .idle, .requestingAuth:
-                    ProgressView("Connecting to Apple Health…").padding(.top, 60)
+                    LoadingProgressView(progress: 0,
+                                        label: "Connecting to Apple Health…")
                 case .loading:
-                    ProgressView("Crunching your numbers…").padding(.top, 60)
+                    LoadingProgressView(progress: session.progress,
+                                        label: "Crunching your numbers…")
                 case .failed(let message):
-                    ErrorCard(message: message) {
+                    ErrorBanner(message: message) {
                         Task { await session.bootstrap() }
                     }
                 case .ready:
@@ -73,24 +75,6 @@ private struct StaleDayBanner: View {
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.indigo.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
-    }
-}
-
-private struct ErrorCard: View {
-    let message: String
-    let retry: () -> Void
-    var body: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.largeTitle)
-                .foregroundStyle(.orange)
-            Text("Something went wrong").font(.headline)
-            Text(message).font(.footnote).multilineTextAlignment(.center).foregroundStyle(.secondary)
-            Button("Try again", action: retry).buttonStyle(.borderedProminent)
-        }
-        .padding()
-        .frame(maxWidth: .infinity)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
 }
 

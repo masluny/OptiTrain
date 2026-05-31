@@ -83,12 +83,17 @@ final class HealthKitManager {
         )
     }
 
-    func recentDailyMetrics(days: Int) async throws -> [DailyMetrics] {
+    func recentDailyMetrics(days: Int,
+                            onDayComplete: (@Sendable (Int) -> Void)? = nil) async throws -> [DailyMetrics] {
         let calendar = Calendar.current
         var results: [DailyMetrics] = []
         for offset in 0..<days {
             let day = calendar.date(byAdding: .day, value: -offset, to: Date())!
             results.append(try await dailyMetrics(for: day, calendar: calendar))
+            // Called with the count of completed days (1-based) so the caller
+            // can drive a real loading-progress ring. This loop is the cold
+            // start's dominant cost, so it owns most of the bar.
+            onDayComplete?(offset + 1)
         }
         return results.reversed()
     }
