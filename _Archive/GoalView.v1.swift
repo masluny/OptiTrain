@@ -14,30 +14,11 @@ struct GoalView: View {
         ScrollView {
             VStack(spacing: 16) {
                 if let goal {
-                    // ── Section 1 · Your goal ──────────────────────────
-                    // Header card + (for race goals) the current readiness
-                    // toward the chosen distance.
-                    sectionHeader("Your goal",
-                                  systemImage: "target",
-                                  tint: .accentColor)
                     GoalHeaderCard(goal: goal) { showingPicker = true }
-                    if case .race(let distance) = goal,
-                       case .ready = session.state,
-                       let snap = session.intelligence,
-                       let r = snap.eventReadiness.first(where: { $0.event == distance }) {
-                        GoalRaceStatusCard(
-                            readiness: r,
-                            prediction: snap.racePredictions.first(where: { $0.distance == distance })
-                        )
-                    }
 
-                    // ── Section 2 · Coaching ──────────────────────────
-                    // GoalCoachCard sits behind the same state guard as
-                    // Today/Races so a failed refresh shows a real error
+                    // State-aware below the header — same pattern as Today /
+                    // Races / Trends, so a failed refresh shows a real error
                     // instead of a forever-spinner.
-                    sectionHeader("Coaching",
-                                  systemImage: "sparkles",
-                                  tint: .accentColor)
                     switch session.state {
                     case .idle, .requestingAuth:
                         LoadingProgressView(progress: 0,
@@ -51,6 +32,13 @@ struct GoalView: View {
                         }
                     case .ready:
                         if let score = session.todayReadiness, let snap = session.intelligence {
+                            if case .race(let distance) = goal,
+                               let r = snap.eventReadiness.first(where: { $0.event == distance }) {
+                                GoalRaceStatusCard(
+                                    readiness: r,
+                                    prediction: snap.racePredictions.first(where: { $0.distance == distance })
+                                )
+                            }
                             GoalCoachCard(goal: goal, readiness: score, snapshot: snap)
                         } else {
                             LoadingProgressView(progress: session.progress,
@@ -71,16 +59,6 @@ struct GoalView: View {
                 showingPicker = false
             }
         }
-    }
-
-    /// Compact section divider matching Today/Trends/Races, so all four
-    /// top-level screens share the same rhythm.
-    private func sectionHeader(_ title: String, systemImage: String, tint: Color) -> some View {
-        Label(title, systemImage: systemImage)
-            .font(.headline)
-            .foregroundStyle(tint)
-            .padding(.top, 4)
-            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

@@ -59,8 +59,14 @@ enum AICoach {
     /// FoundationModels symbols — so it compiles regardless of OS.
     static func dataBlock(readiness: ReadinessScore,
                           snapshot: AdaptiveIntelligenceSnapshot,
-                          plan: AdvisorPlan?) -> String {
+                          plan: AdvisorPlan?,
+                          goal: Goal? = nil) -> String {
         var lines: [String] = []
+        if let goal {
+            lines.append("Athlete's chosen goal: \(goal.title) — \(goal.subtitle)")
+        } else {
+            lines.append("No specific goal set — write general endurance-focused coaching.")
+        }
         lines.append("Readiness: \(readiness.value)/100 (\(readiness.band.label)).")
         for s in readiness.subScores {
             lines.append("- \(s.kind.label): \(Int(s.value))/100 — \(s.detail)")
@@ -104,20 +110,27 @@ struct CoachBriefing {
 @available(iOS 26.0, *)
 extension AICoach {
     /// Generate the briefing on-device. Throws if the model fails or is busy.
+    /// When `goal` is set, the briefing is steered toward what that goal needs;
+    /// when nil, the coach gives general endurance-focused advice.
     static func briefing(readiness: ReadinessScore,
                          snapshot: AdaptiveIntelligenceSnapshot,
-                         plan: AdvisorPlan?) async throws -> CoachBriefing {
+                         plan: AdvisorPlan?,
+                         goal: Goal? = nil) async throws -> CoachBriefing {
+        let goalInstruction = goal.map {
+            "The athlete is training for: \($0.title). Anchor the briefing on that goal — every piece of advice should move them toward it."
+        } ?? "No specific goal is set — give general endurance-focused coaching."
+
         let session = LanguageModelSession(instructions: """
         You are OptiTrain's endurance running coach. You receive a runner's \
         readiness data for the day and write a brief, encouraging, practical \
         briefing. Be specific and human, like a good coach who knows the athlete. \
         Only use the numbers provided — never invent data, paces, or times. Avoid \
-        medical claims and diagnoses. Keep it concise.
+        medical claims and diagnoses. Keep it concise. \(goalInstruction)
         """)
 
         let prompt = """
         Here is today's data:
-        \(dataBlock(readiness: readiness, snapshot: snapshot, plan: plan))
+        \(dataBlock(readiness: readiness, snapshot: snapshot, plan: plan, goal: goal))
 
         Write today's briefing.
         """

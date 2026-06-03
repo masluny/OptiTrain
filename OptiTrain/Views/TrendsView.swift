@@ -37,7 +37,7 @@ struct TrendsView: View {
                                         label: "Connecting to Apple Health…")
                 case .loading:
                     LoadingProgressView(progress: session.progress,
-                                        label: "Loading trends…")
+                                        label: session.loadingStatus)
                 case .failed(let message):
                     ErrorBanner(message: message) {
                         Task { await session.bootstrap() }
@@ -49,9 +49,6 @@ struct TrendsView: View {
                                                description: Text("Charts appear once Apple Health has a few days of data."))
                             .padding(.top, 60)
                     } else {
-                    Text("Last \(session.history.count) days")
-                        .font(.caption).foregroundStyle(.secondary)
-
                     if shows(.performance) {
                         sectionHeader("Performance", systemImage: "bolt.fill", tint: .green)
                         athleteLevelChart
@@ -85,6 +82,19 @@ struct TrendsView: View {
         }
         .scrollIndicators(.hidden)
         .navigationTitle("Trends")
+        .toolbar {
+            // Caption rides in the nav bar's trailing slot so it sits next
+            // to the "Trends" title without consuming any scroll-content
+            // space. Hidden until history has actually loaded so it never
+            // flashes "Last 0 days".
+            if !session.history.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Text("Last \(session.history.count) days")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
     }
 
     private func shows(_ c: TrendCategory) -> Bool { category == .all || category == c }

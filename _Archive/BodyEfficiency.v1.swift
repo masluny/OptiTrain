@@ -1,59 +1,48 @@
 import Foundation
 
-/// "Athlete Level" — a 0–10 headline metric for the athlete's **long-term
-/// athleticism**: how much fitness their body has built up over months of
-/// training, not how they happen to feel today. The v2 redesign was inspired
-/// by Garmin's Fitness Age / Endurance Score family (anchor on VO₂max + chronic
-/// load + cardiac adaptation + demonstrated performance) — durable traits, not
-/// freshness signals.
+/// "Athlete Level" (the type keeps its original `BodyEfficiency` name) — a
+/// single 0–10 headline metric for how capable the athlete's body is. It's a
+/// deliberate simplification of the twelve-component `PhysiologyProfile`: we
+/// fold those components into four physiological systems that map cleanly onto
+/// regions of the body, then blend the systems into one number an athlete can
+/// read at a glance (and share). A body-composition (BMI) modifier then nudges
+/// the headline number — see `bmiFactor`.
 ///
-/// The four components, their body regions, and what they read:
-///   • Aerobic Engine    → chest    (VO₂max — the aerobic ceiling)
-///   • Training Foundation → torso  (chronic volume tolerance + durability,
-///                                   nudged by BMI body-composition factor)
-///   • Performance       → legs     (lactate-threshold proxy + fatigue
-///                                   resistance + modality specificity)
-///   • Cardiac Adaptation → head    (HRV-vs-baseline z-score — long-term
-///                                   autonomic adaptation, *not* today's HRV)
+/// The four systems and their body regions:
+///   • Aerobic engine  → chest / heart   (VO₂max, threshold)
+///   • Endurance core  → torso / core    (durability, volume tolerance, fueling)
+///   • Locomotion      → legs            (fatigue resistance, anaerobic, specificity)
+///   • Recovery        → head            (recovery resilience, sleep, freshness)
 ///
-/// What deliberately *isn't* here anymore: freshness/TSB, today's sleep, daily
-/// recovery debt. Those are "how I feel today" signals and were dragging the
-/// long-term number around on a single bad night. They live on the Training
-/// Readiness card now, where they belong.
-///
-/// The previous (v1) implementation is preserved in `_Archive/BodyEfficiency.v1.swift`
-/// for reference.
+/// Heat adaptation is intentionally excluded — it's a placeholder midpoint in
+/// the profile and would only drag every score toward 5.0.
 struct BodyEfficiency: Sendable {
 
-    /// One of the four long-term athleticism components, scored 0–100, that
-    /// lights up one region of the body silhouette.
+    /// A physiological system: a named bundle of profile components, scored
+    /// 0–100, that lights up one region of the body silhouette.
     struct System: Equatable, Sendable, Identifiable {
-        // The case names stayed the same as v1 to keep the body-region
-        // mapping and the BodyEfficiencyView untouched, but the rawValues,
-        // symbols, and the formulas behind them all changed in v2 to reflect
-        // long-term fitness instead of daily readiness.
         enum Kind: String, CaseIterable, Sendable {
-            case aerobic   = "Aerobic Engine"
-            case endurance = "Training Foundation"
-            case locomotion = "Performance"
-            case recovery  = "Cardiac Adaptation"
+            case aerobic   = "Aerobic engine"
+            case endurance = "Endurance core"
+            case locomotion = "Locomotion"
+            case recovery  = "Recovery"
 
             /// Compact label for tight share-card chips.
             var shortLabel: String {
                 switch self {
                 case .aerobic:    "Engine"
-                case .endurance:  "Foundation"
-                case .locomotion: "Performance"
-                case .recovery:   "Heart"
+                case .endurance:  "Core"
+                case .locomotion: "Legs"
+                case .recovery:   "Recovery"
                 }
             }
 
             var symbol: String {
                 switch self {
-                case .aerobic:    "wind"                          // breath / air intake
-                case .endurance:  "figure.strengthtraining.functional"  // training foundation
-                case .locomotion: "bolt.fill"                    // performance output
-                case .recovery:   "waveform.path.ecg"            // cardiac adaptation
+                case .aerobic:    "heart.fill"
+                case .endurance:  "figure.core.training"
+                case .locomotion: "figure.run"
+                case .recovery:   "moon.zzz.fill"
                 }
             }
 
@@ -96,12 +85,12 @@ struct BodyEfficiency: Sendable {
 
         var headline: String {
             switch self {
-            case .peak:       "Peak athleticism — a body built and adapted."
-            case .elite:      "Elite fitness across every long-term marker."
-            case .strong:     "Strong, well-rounded athletic foundation."
-            case .building:   "Building durable fitness, week by week."
-            case .developing: "The engine and foundation are coming together."
-            case .base:       "Base level. Time on feet is what builds the rest."
+            case .peak:       "Firing on all cylinders — race-ready machine."
+            case .elite:      "Elite engine. Built to perform under load."
+            case .strong:     "Strong and capable across every system."
+            case .building:   "Solid foundation with clear room to climb."
+            case .developing: "Foundations forming — keep stacking the weeks."
+            case .base:       "Early days. Your engine is just waking up."
             }
         }
     }
@@ -125,47 +114,32 @@ struct BodyEfficiency: Sendable {
     init() {}
 
     func snapshot(profile p: PhysiologyProfile, bmi: Double? = nil, confidence: Confidence) -> Snapshot {
-        // Aerobic Engine — the cardiovascular ceiling. The single most
-        // predictive marker of long-term endurance fitness. We use the
-        // grounded VO₂max score (which is itself the best of measured,
-        // performance-VDOT, or the Uth HR-ratio estimate) directly.
-        let engine = p.vo2maxScore
+        let aerobic   = 0.55 * p.vo2maxScore + 0.45 * p.thresholdScore
+        let endurance = 0.45 * p.durabilityScore + 0.30 * p.volumeToleranceScore + 0.25 * p.fuelingScore
+        let locomotion = 0.45 * p.fatigueResistanceScore + 0.30 * p.anaerobicCapacityScore + 0.25 * p.specificityScore
+        // Recovery here means *durable* recovery capacity — built the way the
+        // commercial recovery scores (WHOOP, Oura, Garmin) are. The autonomic
+        // backbone (steadiness of overnight HRV + resting HR) carries the most;
+        // habitual sleep *quality* is a strong second; load-absorption (recovery
+        // debt) and sleep-timing regularity round it out. Acute freshness is
+        // deliberately excluded — that's a "today" signal, not a durable trait —
+        // so a single rough night can't tank the figure.
+        let recovery  = 0.40 * p.autonomicScore
+                      + 0.30 * p.sleepQualityScore
+                      + 0.15 * p.recoveryResilienceScore
+                      + 0.15 * p.sleepConsistencyScore
 
-        // Training Foundation — durable training capacity built over months.
-        // Volume tolerance (current weekly km vs need) dominates because it
-        // captures recent consistency; durability (longest run + count of long
-        // runs across 90d) adds the long-haul tolerance dimension.
-        let foundation = 0.60 * p.volumeToleranceScore
-                       + 0.40 * p.durabilityScore
-
-        // Performance — demonstrated speed and modality fit. Threshold (the
-        // lactate-threshold proxy) carries most of the weight because it's the
-        // single best determinant of sustainable pace; fatigue resistance
-        // (pace-HR efficiency on long runs) and specificity (fraction of work
-        // that's actually running) fill in durability and relevance.
-        let performance = 0.50 * p.thresholdScore
-                        + 0.30 * p.fatigueResistanceScore
-                        + 0.20 * p.specificityScore
-
-        // Cardiac Adaptation — the head/heart signal. autonomicScore now
-        // reads as the 7-day HRV mean vs personal baseline (WHOOP/Oura/Garmin
-        // method), which is *adaptation* — not today's reading — once you let
-        // it smooth over weeks. The acute daily-readiness signals (sleep,
-        // freshness, recovery debt) that v1 mixed in here were "today" signals
-        // and have been moved off this metric entirely. They live on the
-        // Training Readiness card now.
-        let heart = p.autonomicScore
-
-        // Weights: aerobic engine carries the most (it's the textbook
-        // determinant of endurance ceiling), training foundation and
-        // performance balance the middle, and cardiac adaptation gets a real
-        // 15% instead of the v1 8% — long-term HRV adaptation is genuinely
-        // meaningful even when stripped of daily noise.
+        // System weights toward the overall score. Athlete Level is a measure
+        // of *durable* fitness, so the aerobic engine, endurance core and
+        // locomotion — slow-moving, training-built systems — carry almost all of
+        // it. Recovery is a near-token weight: it still colors the figure's head,
+        // but is deliberately kept from swinging the headline number on one bad
+        // night's sleep or a heavy training day.
         let systems: [System] = [
-            System(kind: .recovery,   score: clamp(heart),       weight: 0.15),
-            System(kind: .aerobic,    score: clamp(engine),      weight: 0.40),
-            System(kind: .endurance,  score: clamp(foundation),  weight: 0.25),
-            System(kind: .locomotion, score: clamp(performance), weight: 0.20)
+            System(kind: .recovery,   score: clamp(recovery),   weight: 0.08),
+            System(kind: .aerobic,    score: clamp(aerobic),    weight: 0.38),
+            System(kind: .endurance,  score: clamp(endurance),  weight: 0.32),
+            System(kind: .locomotion, score: clamp(locomotion), weight: 0.22)
         ]
 
         let weightSum = systems.reduce(0) { $0 + $1.weight }

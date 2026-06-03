@@ -18,6 +18,12 @@ struct AdaptiveIntelligencePipeline {
         let scoreDate: Date
         let usingPreviousDay: Bool
         let useWristTemperature: Bool
+        /// Fraction (0...1) of recent days with any observed signal — lets the
+        /// pipeline lower confidence when the user has been off-watch a lot,
+        /// rather than treating missing-watch days as confirmed zeros.
+        let observedDayCoverage: Double
+        /// Number of days loaded into `history`, for confidence math.
+        let historyWindowDays: Int
     }
 
     // Engines are tiny structs — instantiating per-run is essentially free.
@@ -49,10 +55,20 @@ struct AdaptiveIntelligencePipeline {
         let maxHR = MaxHeartRate.estimate(observedPeak: observedPeakHR, age: i.age)
         let sex = i.sex ?? .male    // TRIMP defaults to the male curve when sex is unknown
 
-        // Daily TRIMP for the last 60 days.
+        // Daily TRIMP. *Critically*, we only include days where the watch
+        // actually recorded something — either a daily signal (`hasAnySignal`)
+        // or a workout. Missing-watch days used to count as confirmed
+        // zero-load days, which dragged CTL/ATL averages down for anyone with
+        // sparse Watch coverage. Now they're skipped, and the engine averages
+        // only over days that are real data.
         let calendar = Calendar.current
         let workoutsByDay = Dictionary(grouping: i.workouts) { calendar.startOfDay(for: $0.start) }
-        let daily: [TrainingLoadEngine.DailyLoad] = sortedHistory.map { d in
+        let observedHistory = sortedHistory.filter { d in
+            let dayKey = calendar.startOfDay(for: d.date)
+            let hasWorkout = !(workoutsByDay[dayKey] ?? []).isEmpty
+            return d.hasAnySignal || hasWorkout
+        }
+        let daily: [TrainingLoadEngine.DailyLoad] = observedHistory.map { d in
             let dayKey = calendar.startOfDay(for: d.date)
             let dayWs = workoutsByDay[dayKey] ?? []
             let trimp = TrainingImpulse.daily(dayWs, restingHR: restingHR, maxHR: maxHR, sex: sex)
@@ -68,9 +84,16 @@ struct AdaptiveIntelligencePipeline {
         let vo2 = vo2Engine.snapshot(from: i.vo2Samples)
         let efficiency = efficiencyEngine.snapshot(from: i.workouts, restingHR: restingHR)
 
-        // Race predictions for every supported distance.
+        // Race predictions for every supported distance. Cap "longest recent
+        // run" to a rolling 120 days so a half-marathon you finished last year
+        // doesn't keep inflating coverage on a marathon you've stopped
+        // training for.
         let bestRef = racePrediction.bestReference(from: i.workouts)
-        let longestRun = i.workouts.filter { $0.kind == .run }.compactMap(\.distanceMeters).max() ?? 0
+        let longestRunCutoff = calendar.date(byAdding: .day, value: -120, to: i.scoreDate) ?? i.scoreDate
+        let longestRun = i.workouts
+            .filter { $0.kind == .run && $0.start >= longestRunCutoff }
+            .compactMap(\.distanceMeters)
+            .max() ?? 0
         let predictions: [RaceTimePrediction.Prediction] = {
             guard let ref = bestRef else { return [] }
             return RaceTimePrediction.RaceDistance.allCases.map {
@@ -92,10 +115,13 @@ struct AdaptiveIntelligencePipeline {
             maxHR: maxHR
         ))
         let baseConfidence = Confidence.combine([
-            Confidence.fromSampleDensity(present: sortedHistory.count, target: 28),
+            // Use observed days only, not raw window length — a 35-day window
+            // with 10 actual data points scores like 10 days of evidence, not 35.
+            Confidence.fromSampleDensity(present: observedHistory.count, target: 28),
             Confidence.fromSampleDensity(present: i.workouts.count, target: 12),
             loadSnap?.confidence ?? Confidence(0.5),
-            debt?.confidence ?? Confidence(0.5)
+            debt?.confidence ?? Confidence(0.5),
+            Confidence(i.observedDayCoverage)
         ])
         // Are VO₂max and aerobic efficiency trending up? Folded into one 0–1
         // signal (0.5 = flat) that lets demonstrated *progress* lift race

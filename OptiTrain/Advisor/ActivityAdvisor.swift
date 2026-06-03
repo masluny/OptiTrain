@@ -5,6 +5,18 @@ struct ActivityAdvisor {
         let readiness: ReadinessScore
         let recentWorkouts: [WorkoutSummary]   // last ~7 days, most recent last
         let consecutiveLowReadinessDays: Int   // count of trailing days with score < 55
+        /// Athlete's chosen goal. nil → general advice.
+        let goal: Goal?
+
+        init(readiness: ReadinessScore,
+             recentWorkouts: [WorkoutSummary],
+             consecutiveLowReadinessDays: Int,
+             goal: Goal? = nil) {
+            self.readiness = readiness
+            self.recentWorkouts = recentWorkouts
+            self.consecutiveLowReadinessDays = consecutiveLowReadinessDays
+            self.goal = goal
+        }
     }
 
     func plan(for context: Context) -> AdvisorPlan {
@@ -113,12 +125,89 @@ struct ActivityAdvisor {
             )
         }
 
+        // Goal-aware reordering and rationale anchoring. If the athlete picked
+        // a race goal in Goal tab, recommendations tilt toward modalities that
+        // serve that race; the top pick's rationale also leads with a one-line
+        // goal anchor so the connection is visible. nil goal → no change.
+        let goalShaped = applyGoalBias(to: capped, goal: context.goal)
+            .sorted { $0.priority < $1.priority }
+
         return AdvisorPlan(
             date: context.readiness.date,
-            recommendations: capped.sorted { $0.priority < $1.priority },
+            recommendations: goalShaped,
             warnings: warnings,
             caps: caps
         )
+    }
+
+    /// Re-orders + lightly re-titles the picks based on the athlete's chosen
+    /// goal. Doesn't replace recommendations (the band-based logic stays
+    /// authoritative on intensity safety) — it just promotes the ones that
+    /// best serve the goal and prepends a goal-anchor line to the top pick.
+    private func applyGoalBias(to picks: [ActivityRecommendation], goal: Goal?) -> [ActivityRecommendation] {
+        guard let goal else { return picks }
+        let preferred = preferredModalities(for: goal)
+        // Re-rank: any pick whose modality appears in `preferred` moves to
+        // priority 1; everything else falls down. Ties broken by original
+        // priority so the band-based ordering still matters for like picks.
+        var ranked = picks.enumerated().map { idx, rec -> (ActivityRecommendation, Int) in
+            let rank = preferred.firstIndex(of: rec.modality)
+                ?? (preferred.count + idx)   // unpreferred picks keep their relative order after the preferred ones
+            return (rec, rank)
+        }
+        ranked.sort { $0.1 < $1.1 }
+        guard !ranked.isEmpty else { return picks }
+        let goalLine = goalAnchorLine(for: goal)
+        let reassigned = ranked.enumerated().map { newIdx, pair -> ActivityRecommendation in
+            let (rec, _) = pair
+            // Top pick gets the goal-anchor rationale prefix so the user sees
+            // the connection. Lower picks keep their original rationale.
+            let rationale = newIdx == 0 ? "\(goalLine) \(rec.rationale)" : rec.rationale
+            return ActivityRecommendation(
+                modality: rec.modality,
+                title: rec.title,
+                durationMinutes: rec.durationMinutes,
+                intensityRPE: rec.intensityRPE,
+                rationale: rationale,
+                priority: newIdx + 1
+            )
+        }
+        return reassigned
+    }
+
+    /// Which session modalities best serve each goal, listed in preference
+    /// order. Distance races lean on long aerobic work; short fast races lean
+    /// on VO₂max/threshold intensity; generic goals follow their stated focus.
+    private func preferredModalities(for goal: Goal) -> [ActivityRecommendation.Modality] {
+        switch goal {
+        case .race(let event):
+            switch event {
+            case .mile, .fiveK:
+                return [.intervalRun, .tempoRun, .easyRun, .heavyLift, .accessoryLift]
+            case .tenK, .fortyKTT, .sprintTri, .sprintDuathlon, .sprintBiathlon:
+                return [.tempoRun, .intervalRun, .easyRun, .heavyLift]
+            case .halfMarathon, .olympicTri, .standardDuathlon, .standardBiathlon:
+                return [.tempoRun, .longRun, .easyRun, .intervalRun]
+            case .marathon, .seventyThree, .granFondo:
+                return [.longRun, .easyRun, .tempoRun, .mobility]
+            case .fiftyKUltra, .ironman, .century:
+                return [.longRun, .easyRun, .walk, .mobility]
+            }
+        case .generic(let g):
+            switch g {
+            case .getFitter:         return [.tempoRun, .easyRun, .intervalRun, .heavyLift]
+            case .loseWeight:        return [.easyRun, .walk, .tempoRun, .accessoryLift]
+            case .buildMuscle:       return [.heavyLift, .accessoryLift, .easyRun]
+            case .raiseAthleteLevel: return [.tempoRun, .longRun, .intervalRun, .heavyLift]
+            case .sleepBetter:       return [.easyRun, .walk, .mobility]
+            }
+        }
+    }
+
+    /// One-line anchor prepended to the top recommendation's rationale so the
+    /// user sees how the day's pick serves their goal.
+    private func goalAnchorLine(for goal: Goal) -> String {
+        "Toward your \(goal.title.lowercased()):"
     }
 
     // MARK: - Helpers

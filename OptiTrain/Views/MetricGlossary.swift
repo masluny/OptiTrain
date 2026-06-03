@@ -170,7 +170,7 @@ extension MetricGlossary {
         return MetricGlossary(
             title: "The four systems",
             systemImage: "figure.stand",
-            intro: "Your Athlete Level is a blend of four physiological systems, each tied to a region of the body. Here's what each one means, your current score, and the training that moves it most.",
+            intro: "Your Athlete Level reads long-term athleticism: how much fitness you've built across months of training, not how you feel today. Four components, each tied to a region of the body.",
             entries: entries
         )
     }
@@ -178,26 +178,26 @@ extension MetricGlossary {
     private static func systemMeaning(_ kind: BodyEfficiency.System.Kind) -> String {
         switch kind {
         case .aerobic:
-            "The size and efficiency of your cardiovascular engine — how much oxygen you can deliver and use (VO₂max), and how hard you can go before lactate piles up (threshold). It's the single biggest driver of endurance performance."
+            "Your aerobic ceiling — how much oxygen the cardiovascular system can deliver and the working muscles can use (VO₂max). The single most predictive marker of long-term endurance fitness."
         case .endurance:
-            "Your ability to hold pace deep into long efforts without falling apart — durability, tolerance for training volume, and how well you fuel. This is what keeps the engine running in the final third of a race."
+            "The durable training foundation you've built: weekly volume your body tolerates, plus a 90-day base of long-effort durability. Body composition nudges the headline up or down at the end."
         case .locomotion:
-            "What your legs can actually do — fatigue resistance, anaerobic power, and event-specific strength and mechanics. The bridge between aerobic fitness and the speed you can express on the day."
+            "Demonstrated performance output — how fast you can sustain effort (lactate-threshold proxy), how well pace holds late in long runs (fatigue resistance), and how much of your training actually matches your event (specificity)."
         case .recovery:
-            "Your durable capacity to bounce back — how well your body absorbs training and restores itself across days and weeks. Built on consistent sleep and a nervous system that resets between hard efforts. Not last night's sleep, but recovery as a trait."
+            "Long-term cardiac adaptation — where your overnight HRV typically sits relative to your own personal baseline. Adapts slowly across weeks of consistent training and rest. Today's HRV alone doesn't move it."
         }
     }
 
     private static func systemTraining(_ kind: BodyEfficiency.System.Kind) -> String {
         switch kind {
         case .aerobic:
-            "Build a base of easy aerobic volume (Zone 2), add weekly threshold/tempo work, and — when fit — short VO₂max intervals of 3–5 min hard. Consistency of aerobic volume matters most."
+            "Build the engine with consistent easy aerobic volume (Zone 2). Layer in weekly threshold work and short VO₂max intervals (3–5 min hard) once the base is stable. The biggest gains come from years of consistency, not weeks."
         case .endurance:
-            "Progressively lengthen your long sessions, add back-to-back days and fast-finish long efforts, and practise race-day fuelling (carbs per hour). Raise weekly volume gradually."
+            "Raise weekly volume gradually — about 10% per week, then a rest week every 3–4. Lengthen the long run progressively, add back-to-back long days, and keep BMI in a healthy/athletic range to round out the body-composition factor."
         case .locomotion:
-            "Strength train (squats, lunges, plyometrics), run hills and strides, and do event-specific reps at goal pace. Build durability in the legs, not just the heart."
+            "Threshold runs (20–40 min comfortably hard), tempo intervals, and event-specific reps at goal pace. Strength + hills for fatigue resistance. Keep most weekly volume in the discipline you race to lift specificity."
         case .recovery:
-            "Keep consistent sleep and wake times and protect 7.5h+ most nights, keep easy days truly easy, and take a rest week every 3–4 weeks. Manage life stress and refuel after hard sessions."
+            "Stack the basics: consistent sleep and wake times, 7+ hours most nights, well-spaced hard sessions, and life-stress management. HRV-baseline shifts up across months, not days — patience matters."
         }
     }
 

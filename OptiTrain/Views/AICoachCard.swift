@@ -9,9 +9,13 @@ struct AICoachCard: View {
     let readiness: ReadinessScore
     let snapshot: AdaptiveIntelligenceSnapshot
     let plan: AdvisorPlan?
+    /// The athlete's chosen goal, if any. nil → general endurance advice.
+    let goal: Goal?
 
     @State private var phase: Phase = .idle
-    @State private var generatedFor: Date?
+    /// Stamp of (scoreDate, goal) we last produced a briefing for — added to
+    /// the cache key so changing the goal in Settings re-prompts the model.
+    @State private var generatedForKey: String?
 
     enum Phase: Equatable {
         case idle
@@ -19,6 +23,12 @@ struct AICoachCard: View {
         case ready(headline: String, guidance: String, focus: String)
         case unavailable(String)
         case failed
+    }
+
+    /// Date + goal compose into one cache key — change either and the briefing
+    /// regenerates.
+    private var taskKey: String {
+        "\(snapshot.scoreDate.timeIntervalSince1970)|\(goal?.rawValue ?? "none")"
     }
 
     var body: some View {
@@ -29,9 +39,9 @@ struct AICoachCard: View {
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 20))
-        .task(id: snapshot.scoreDate) {
-            // Don't regenerate if we already have a briefing for this day.
-            if generatedFor == snapshot.scoreDate, case .ready = phase { return }
+        .task(id: taskKey) {
+            // Don't regenerate if we already have a briefing for this key.
+            if generatedForKey == taskKey, case .ready = phase { return }
             await generate()
         }
     }
@@ -125,8 +135,8 @@ struct AICoachCard: View {
             return
         }
         do {
-            let briefing = try await AICoach.briefing(readiness: readiness, snapshot: snapshot, plan: plan)
-            generatedFor = snapshot.scoreDate
+            let briefing = try await AICoach.briefing(readiness: readiness, snapshot: snapshot, plan: plan, goal: goal)
+            generatedForKey = taskKey
             withAnimation {
                 phase = .ready(headline: briefing.headline,
                                guidance: briefing.guidance,

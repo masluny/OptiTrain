@@ -123,6 +123,7 @@ struct BodyEfficiencyView: View {
     let snapshot: BodyEfficiency.Snapshot
     let date: Date
 
+    @Environment(AppSession.self) private var session
     @State private var shareURL: URL?
     @State private var sharePreview: Image?
     @State private var showingSystemsInfo = false
@@ -133,9 +134,9 @@ struct BodyEfficiencyView: View {
                 hero
                 systemsBreakdown
                 insights
-                Text("Confidence \(snapshot.confidence.description) · derived from your last weeks of training. The more you log, the sharper this gets.")
-                    .font(.caption2).foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                DataCoverageBar(observed: session.trainingDaysObserved,
+                                target: session.trainingDaysTarget,
+                                confidence: snapshot.confidence)
             }
             .padding(.horizontal)
             .padding(.bottom, 32)
@@ -309,6 +310,87 @@ private struct InsightRow: View {
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+}
+
+// MARK: - Data coverage strap
+
+/// Honest progress bar showing how many days of trailing history feed the
+/// Athlete Level vs. the 90-day target the engine reads. Capped at the target
+/// so the bar caps cleanly at 100%. The remaining-days caption tells the user
+/// the concrete number — "63 more days for full coverage" — instead of an
+/// abstract confidence percentage.
+private struct DataCoverageBar: View {
+    let observed: Int
+    let target: Int
+    let confidence: Confidence
+
+    private var clampedObserved: Int { min(observed, target) }
+    private var fraction: Double {
+        guard target > 0 else { return 0 }
+        return Double(clampedObserved) / Double(target)
+    }
+    private var remaining: Int { max(0, target - clampedObserved) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                Label("Data coverage", systemImage: "chart.bar.fill")
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                Text("\(clampedObserved) / \(target) days")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.secondary.opacity(0.18))
+                        .frame(height: 10)
+                    Capsule()
+                        .fill(LinearGradient(colors: barGradient,
+                                             startPoint: .leading,
+                                             endPoint: .trailing))
+                        .frame(width: max(0, geo.size.width * fraction),
+                               height: 10)
+                        .animation(.easeOut(duration: 0.45), value: fraction)
+                }
+            }
+            .frame(height: 10)
+            Text(caption)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    /// Caption shifts based on coverage band:
+    /// • full coverage → "Full coverage. Athlete Level at maximum confidence."
+    /// • partial → "X more days of training history for full accuracy."
+    /// • near-empty → "Wear your watch and log workouts to build coverage."
+    private var caption: String {
+        if remaining == 0 {
+            return "Full coverage — Athlete Level is reading at maximum confidence (\(confidence.description))."
+        }
+        if clampedObserved < 7 {
+            return "Just getting started. Wear your watch and log workouts; the score sharpens as data accumulates."
+        }
+        let dayWord = remaining == 1 ? "day" : "days"
+        return "\(remaining) more \(dayWord) of training history needed for the most accurate Athlete Level (\(confidence.description) confidence now)."
+    }
+
+    /// Orange → yellow when sparse, green → mint when nearly full — same
+    /// readiness ramp the gauge uses, so the user reads "good/bad" instantly.
+    private var barGradient: [Color] {
+        switch fraction {
+        case 0.85...: [.green, .mint]
+        case 0.55..<0.85: [.mint, .yellow]
+        case 0.25..<0.55: [.yellow, .orange]
+        default: [.orange, .red]
+        }
     }
 }
 

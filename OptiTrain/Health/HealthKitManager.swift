@@ -52,33 +52,49 @@ final class HealthKitManager {
 
     // MARK: - Daily snapshot
 
-    func dailyMetrics(for date: Date, calendar: Calendar = .current) async throws -> DailyMetrics {
+    func dailyMetrics(for date: Date,
+                      calendar: Calendar = .current,
+                      precomputedWorkoutLoad: Double? = nil) async throws -> DailyMetrics {
         let dayStart = calendar.startOfDay(for: date)
         let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart)!
         // Wide sleep window: yesterday noon → today 2pm. Catches late bedtimes, late wake-ups, and naps.
         let sleepWindowStart = calendar.date(byAdding: .hour, value: -12, to: dayStart)!
         let sleepWindowEnd = dayStart.addingTimeInterval(14 * 3600)
 
-        async let sleep = sleepMetrics(start: sleepWindowStart, end: sleepWindowEnd)
-        async let hrv = overnightHRV(start: sleepWindowStart, end: sleepWindowEnd)
-        async let rhr = latestQuantity(.restingHeartRate, unit: HKUnit(from: "count/min"), in: DateInterval(start: calendar.date(byAdding: .day, value: -1, to: dayEnd)!, end: dayEnd))
-        async let temp = wristTemperatureDelta(on: date, calendar: calendar)
-        async let resp = latestQuantity(.respiratoryRate, unit: HKUnit(from: "count/min"), in: DateInterval(start: sleepWindowStart, end: dayEnd))
-        async let steps = sum(.stepCount, unit: .count(), in: DateInterval(start: dayStart, end: dayEnd))
-        async let kcal = sum(.activeEnergyBurned, unit: .kilocalorie(), in: DateInterval(start: dayStart, end: dayEnd))
-        async let workouts = workouts(in: DateInterval(start: dayStart, end: dayEnd))
+        // Every per-day query is wrapped in `tolerant`: HealthKit's most common
+        // failure is "no data in window" (HKError 11), which we already coerce
+        // to nil — but ANY other transient error from a single sub-query
+        // shouldn't take down the whole day's row. Missing signals just become
+        // nil and the engines downstream decide how to treat them.
+        async let sleep = tolerant { try await self.sleepMetrics(start: sleepWindowStart, end: sleepWindowEnd) }
+        async let hrv = tolerant { try await self.overnightHRV(start: sleepWindowStart, end: sleepWindowEnd) }
+        async let rhr = tolerant { try await self.latestQuantity(.restingHeartRate, unit: HKUnit(from: "count/min"), in: DateInterval(start: calendar.date(byAdding: .day, value: -1, to: dayEnd)!, end: dayEnd)) }
+        async let temp = tolerant { try await self.wristTemperatureDelta(on: date, calendar: calendar) }
+        async let resp = tolerant { try await self.latestQuantity(.respiratoryRate, unit: HKUnit(from: "count/min"), in: DateInterval(start: sleepWindowStart, end: dayEnd)) }
+        async let steps = tolerant { try await self.sum(.stepCount, unit: .count(), in: DateInterval(start: dayStart, end: dayEnd)) }
+        async let kcal = tolerant { try await self.sum(.activeEnergyBurned, unit: .kilocalorie(), in: DateInterval(start: dayStart, end: dayEnd)) }
 
-        let workoutLoad = try await workouts.reduce(0.0) { $0 + load(for: $1) }
+        // Workout load is the expensive query — caller can hand us a value
+        // pre-computed once for the whole window, skipping the per-day query.
+        let workoutLoad: Double
+        if let precomputedWorkoutLoad {
+            workoutLoad = precomputedWorkoutLoad
+        } else {
+            let dayWorkouts = (try? await workouts(in: DateInterval(start: dayStart, end: dayEnd))) ?? []
+            workoutLoad = dayWorkouts.reduce(0.0) { $0 + load(for: $1) }
+        }
 
+        // Flatten the nested `T??` from `tolerant<T?>` back to a single optional
+        // so the call site reads the way it always has.
         return DailyMetrics(
             date: dayStart,
-            sleep: try await sleep,
-            overnightHRV: try await hrv,
-            restingHeartRate: try await rhr,
-            wristTemperatureDelta: try await temp,
-            respiratoryRate: try await resp,
-            steps: try await steps.map { Int($0) },
-            activeEnergyKcal: try await kcal,
+            sleep: (await sleep).flatMap { $0 },
+            overnightHRV: (await hrv).flatMap { $0 },
+            restingHeartRate: (await rhr).flatMap { $0 },
+            wristTemperatureDelta: (await temp).flatMap { $0 },
+            respiratoryRate: (await resp).flatMap { $0 },
+            steps: (await steps).flatMap { $0 }.map { Int($0) },
+            activeEnergyKcal: (await kcal).flatMap { $0 },
             workoutLoad: workoutLoad
         )
     }
@@ -86,16 +102,69 @@ final class HealthKitManager {
     func recentDailyMetrics(days: Int,
                             onDayComplete: (@Sendable (Int) -> Void)? = nil) async throws -> [DailyMetrics] {
         let calendar = Calendar.current
-        var results: [DailyMetrics] = []
-        for offset in 0..<days {
-            let day = calendar.date(byAdding: .day, value: -offset, to: Date())!
-            results.append(try await dailyMetrics(for: day, calendar: calendar))
-            // Called with the count of completed days (1-based) so the caller
-            // can drive a real loading-progress ring. This loop is the cold
-            // start's dominant cost, so it owns most of the bar.
-            onDayComplete?(offset + 1)
+        guard days > 0 else { return [] }
+
+        // Pull every workout for the window in ONE query, then build a per-day
+        // load map. Previously we hit HealthKit with N extra workout queries
+        // (one per day) — biggest single contributor to cold-start latency.
+        let today = calendar.startOfDay(for: Date())
+        let start = calendar.date(byAdding: .day, value: -(days - 1), to: today)!
+        let end = calendar.date(byAdding: .day, value: 1, to: today)!
+        let allWorkouts = (try? await workouts(in: DateInterval(start: start, end: end))) ?? []
+        let loadByDay: [Date: Double] = allWorkouts.reduce(into: [:]) { partial, workout in
+            let dayKey = calendar.startOfDay(for: workout.start)
+            partial[dayKey, default: 0] += load(for: workout)
         }
-        return results.reversed()
+
+        // Bounded parallelism: fan out up to N days at once. The whole loop
+        // used to be strictly sequential, so 35 days × 200ms ≈ 7s. With a
+        // window of 3 concurrent days, the same fetch finishes in ~3s — and we
+        // don't flood HealthKit with so many simultaneous queries that the
+        // store starts rate-limiting us. Tuned by hand on iPhone 17.
+        let maxConcurrentDays = 3
+        var ordered: [DailyMetrics?] = Array(repeating: nil, count: days)
+        var nextOffset = 0
+        var completed = 0
+
+        try await withThrowingTaskGroup(of: (Int, DailyMetrics).self) { group in
+            // Prime the window.
+            while nextOffset < min(maxConcurrentDays, days) {
+                let offset = nextOffset
+                let day = calendar.date(byAdding: .day, value: -offset, to: today)!
+                let cachedLoad = loadByDay[calendar.startOfDay(for: day)] ?? 0
+                group.addTask { [self] in
+                    try Task.checkCancellation()
+                    let metrics = try await dailyMetrics(for: day,
+                                                         calendar: calendar,
+                                                         precomputedWorkoutLoad: cachedLoad)
+                    return (offset, metrics)
+                }
+                nextOffset += 1
+            }
+
+            // Drain + refill: as each day completes, kick off the next one.
+            while let (offset, metrics) = try await group.next() {
+                ordered[offset] = metrics
+                completed += 1
+                onDayComplete?(completed)
+
+                if nextOffset < days {
+                    let scheduledOffset = nextOffset
+                    let day = calendar.date(byAdding: .day, value: -scheduledOffset, to: today)!
+                    let cachedLoad = loadByDay[calendar.startOfDay(for: day)] ?? 0
+                    group.addTask { [self] in
+                        try Task.checkCancellation()
+                        let metrics = try await dailyMetrics(for: day,
+                                                             calendar: calendar,
+                                                             precomputedWorkoutLoad: cachedLoad)
+                        return (scheduledOffset, metrics)
+                    }
+                    nextOffset += 1
+                }
+            }
+        }
+
+        return ordered.compactMap { $0 }.reversed()
     }
 
     // MARK: - Sleep
@@ -219,7 +288,12 @@ final class HealthKitManager {
         let predicate = HKQuery.predicateForSamples(withStart: interval.start, end: interval.end)
         let sample: HKQuantitySample? = try await withCheckedThrowingContinuation { cont in
             let q = HKSampleQuery(sampleType: type, predicate: predicate, limit: 1, sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]) { _, samples, error in
-                if let error { cont.resume(throwing: error); return }
+                if let error {
+                    // "No data in window" is a normal state, not a failure —
+                    // mirror the same coercion the other helpers do.
+                    if Self.isNoData(error) { cont.resume(returning: nil); return }
+                    cont.resume(throwing: error); return
+                }
                 cont.resume(returning: (samples as? [HKQuantitySample])?.first)
             }
             store.execute(q)
@@ -484,6 +558,18 @@ final class HealthKitManager {
             )
         } catch {
             return .init(label: "Workouts", sampleCount: 0, lastSampleAt: nil, lastValue: nil, notes: "Error: \(error.localizedDescription)")
+        }
+    }
+
+    /// Run an async operation that may throw; fold any error (including the
+    /// transient HealthKit ones we can't anticipate) down to nil. Used by every
+    /// per-day query so a single failure can't cascade and erase the rest of
+    /// that day's signals.
+    private func tolerant<T>(_ operation: @Sendable () async throws -> T?) async -> T? {
+        do {
+            return try await operation()
+        } catch {
+            return nil
         }
     }
 

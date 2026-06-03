@@ -7,9 +7,6 @@ struct TodayView: View {
     /// briefing when the goal changes in Settings. nil → general advice.
     @AppStorage(UserSettingsKey.selectedGoal) private var goalRaw: String = ""
     private var goal: Goal? { Goal(rawValue: goalRaw) }
-    /// Drives the explainer alert when the user taps the carried-sleep chip
-    /// in the nav bar.
-    @State private var showingSleepExplain = false
 
     var body: some View {
         ScrollView {
@@ -33,16 +30,12 @@ struct TodayView: View {
                     if !session.dataQualityNotes.isEmpty {
                         DataQualityBanner(notes: session.dataQualityNotes)
                     }
-                    // The carried-sleep notice (which used to be a full card
-                    // here) now lives in the nav bar's trailing slot — same
-                    // pattern as the "Last N days" caption on Trends — so it
-                    // doesn't push the cards down.
-                    // ── Section 1 · At a glance ──────────────────────────
-                    // The fast-read summary: ring + figure + per-input bars.
+                    if session.showingPreviousDay, let date = session.sleepCarriedFrom {
+                        StaleDayBanner(date: date)
+                    }
+                    // Two square cards side-by-side at the top: Training
+                    // Readiness on the left, Athlete Level on the right.
                     if let score = session.todayReadiness, let snap = session.intelligence {
-                        sectionHeader("At a glance",
-                                      systemImage: "sun.max.fill",
-                                      tint: .orange)
                         HStack(spacing: 12) {
                             ReadinessHeroCard(score: score)
                             NavigationLink {
@@ -54,16 +47,9 @@ struct TodayView: View {
                             .buttonStyle(.plain)
                         }
                         ReadinessBreakdownView(score: score)
-                    }
-                    // ── Section 2 · Today's plan ─────────────────────────
-                    // Concrete picks first; AI narrative read second. Both
-                    // goal-aware when one is set.
-                    if let score = session.todayReadiness,
-                       let snap = session.intelligence,
-                       (session.plan != nil || aiFeaturesEnabled) {
-                        sectionHeader("Today's plan",
-                                      systemImage: "figure.run",
-                                      tint: .accentColor)
+                        // Activity Advisor first — concrete picks for today —
+                        // then the AI Coach gives the narrative read on the
+                        // numbers. Both are goal-aware when one is set.
                         if let plan = session.plan {
                             AdvisorCardView(plan: plan)
                         }
@@ -74,13 +60,7 @@ struct TodayView: View {
                                         goal: goal)
                         }
                     }
-                    // ── Section 3 · Body signals ─────────────────────────
-                    // The under-the-hood: load, recovery debt, autonomic
-                    // state, injury/burnout risk.
                     if let snap = session.intelligence {
-                        sectionHeader("Body signals",
-                                      systemImage: "waveform.path.ecg",
-                                      tint: .pink)
                         if let load = snap.load { LoadCard(snapshot: load) }
                         if let debt = snap.recoveryDebt { RecoveryDebtCard(snapshot: debt) }
                         if let aut = snap.autonomicStability { AutonomicCard(snapshot: aut) }
@@ -93,44 +73,7 @@ struct TodayView: View {
         }
         .scrollIndicators(.hidden)
         .navigationTitle("OptiTrain")
-        .toolbar {
-            // Carried-sleep chip rides in the nav bar so the explanation
-            // doesn't take a card-sized chunk off the top of the scroll.
-            // Tapping it opens an alert with the full reason — same info as
-            // the old StaleDayBanner card had, just one tap away.
-            if session.showingPreviousDay, let date = session.sleepCarriedFrom {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showingSleepExplain = true
-                    } label: {
-                        Label("Sleep · \(date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))",
-                              systemImage: "moon.zzz.fill")
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(.indigo)
-                            .labelStyle(.titleAndIcon)
-                    }
-                    .accessibilityLabel("Sleep data carried over — tap for details")
-                }
-            }
-        }
-        .alert("Using older sleep data",
-               isPresented: $showingSleepExplain,
-               presenting: session.sleepCarriedFrom) { _ in
-            Button("OK", role: .cancel) { }
-        } message: { date in
-            Text("No sleep was recorded for last night, so today's readiness reuses your sleep from \(date.formatted(.dateTime.weekday(.wide).month().day())). Wear your watch to bed for a fresh score.")
-        }
         .refreshable { await session.refresh() }
-    }
-
-    /// Compact section divider — same visual treatment Trends uses, so the
-    /// app's top-level screens share a consistent rhythm.
-    private func sectionHeader(_ title: String, systemImage: String, tint: Color) -> some View {
-        Label(title, systemImage: systemImage)
-            .font(.headline)
-            .foregroundStyle(tint)
-            .padding(.top, 4)
-            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
